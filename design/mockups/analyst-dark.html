@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup Edge - Analyst Dark</title>
+<style>
+  :root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --surface-2: #1C2330;
+    --text: #E6EDF3;
+    --text-muted: #7D8590;
+    --border: #30363D;
+    --accent: #F0A030;
+    --alert: #E5484D;
+    --positive: #3FB950;
+    --mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+    --sans: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.5; }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+  
+  .header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .header-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .product-name { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+  .status-bar { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+  .status-item { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-live { background: var(--positive); }
+  
+  .match-title { font-size: 26px; font-weight: 600; margin-top: 16px; letter-spacing: -0.01em; }
+  .match-meta { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+  .countdown { font-family: var(--mono); font-size: 14px; color: var(--accent); margin-top: 8px; }
+  
+  .gap-result { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 32px; margin-bottom: 24px; }
+  .gap-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+  .gap-value { font-family: var(--mono); font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1.1; margin: 8px 0; }
+  .gap-value.alert { color: var(--alert); }
+  .gap-explanation { font-size: 14px; color: var(--text-muted); margin-top: 12px; max-width: 560px; line-height: 1.6; }
+  
+  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+  .source-panel { background: var(--surface); padding: 24px; }
+  .source-name { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+  .source-value { font-family: var(--mono); font-size: 32px; font-weight: 600; margin: 8px 0 4px; color: var(--text); }
+  .source-detail { font-size: 13px; color: var(--text-muted); }
+  .source-freshness { font-size: 11px; color: var(--text-muted); margin-top: 12px; display: flex; align-items: center; gap: 6px; font-family: var(--mono); }
+  
+  .verification { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px 24px; margin-bottom: 24px; }
+  .verification-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .check-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+  .check-item { font-size: 13px; display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+  .check-icon { font-family: var(--mono); font-size: 12px; color: var(--positive); }
+  
+  .history { margin-bottom: 24px; }
+  .history-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .history-item { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
+  .history-time { font-family: var(--mono); min-width: 60px; }
+  .history-gap { font-family: var(--mono); font-weight: 600; color: var(--accent); margin-left: auto; }
+  
+  @media (max-width: 768px) {
+    .comparison { grid-template-columns: 1fr; }
+    .check-list { grid-template-columns: 1fr; }
+    .gap-value { font-size: 36px; }
+    .match-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  
+  <div class="header">
+    <div class="header-top">
+      <div class="product-name">World Cup Edge</div>
+      <div class="status-bar">
+        <div class="status-item"><span class="dot dot-live"></span> TxLINE: Live</div>
+        <div class="status-item"><span class="dot dot-live"></span> Polymarket: Live</div>
+        <div class="status-item">2s ago</div>
+      </div>
+    </div>
+    <h1 class="match-title">England vs Argentina</h1>
+    <div class="match-meta">FIFA World Cup 2026 Semi-final · July 15, 19:00 UTC</div>
+    <div class="countdown">Starts in 4h 12m</div>
+  </div>
+  
+  <div class="gap-result">
+    <div class="gap-label">Consensus Gap — England YES</div>
+    <div class="gap-value alert">+8.4 pp</div>
+    <div class="gap-explanation">
+      Polymarket prices England lower than TxLINE consensus. TxLINE derives 47.0% from aggregated sharp-book odds. Polymarket best ask is 38.6¢. After fee, gap is 7.2 pp. Not guaranteed profit.
+    </div>
+  </div>
+  
+  <div class="comparison">
+    <div class="source-panel">
+      <div class="source-name">TxLINE Consensus</div>
+      <div class="source-value">47.0%</div>
+      <div class="source-detail">England regulation-time win · StablePrice</div>
+      <div class="source-freshness"><span class="dot dot-live"></span> 2s ago · #184F2A</div>
+    </div>
+    <div class="source-panel">
+      <div class="source-name">Polymarket Best Ask</div>
+      <div class="source-value">38.6¢</div>
+      <div class="source-detail">England YES · top-of-book</div>
+      <div class="source-freshness"><span class="dot dot-live"></span> 1s ago · seq 9821</div>
+    </div>
+  </div>
+  
+  <div class="verification">
+    <div class="verification-title">Input Verification</div>
+    <div class="check-list">
+      <div class="check-item"><span class="check-icon">&#10003;</span> Teams: England vs Argentina</div>
+      <div class="check-item"><span class="check-icon">&#10003;</span> Date: July 15, 2026</div>
+      <div class="check-item"><span class="check-icon">&#10003;</span> Regulation-time 1X2</div>
+      <div class="check-item"><span class="check-icon">&#10003;</span> YES token paired</div>
+      <div class="check-item"><span class="check-icon">&#10003;</span> Market active</div>
+      <div class="check-item"><span class="check-icon">&#10003;</span> Fee: 0.05 (live)</div>
+    </div>
+  </div>
+  
+  <div class="history">
+    <div class="history-title">Session Alert History</div>
+    <div class="history-item">
+      <span class="history-time">15:23</span>
+      <span>England YES gap exceeded 5pp threshold</span>
+      <span class="history-gap">+8.4 pp</span>
+    </div>
+    <div class="history-item">
+      <span class="history-time">15:18</span>
+      <span>England YES gap exceeded 5pp threshold</span>
+      <span class="history-gap">+6.1 pp</span>
+    </div>
+  </div>
+  
+</div>
+</body>
+</html>
