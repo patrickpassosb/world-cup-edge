@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>World Cup Edge | Live Consensus Monitor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;1,8..60,600&family=JetBrains+Mono:wght@500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family='Source+Sans+3':wght@100..900&family='Source+Serif+4':wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#e0e2e6",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#c8c6c5",
+                    "surface": "#FAF7F2",
+                    "surface-container": "#eceef2",
+                    "on-background": "#1F1F1F",
+                    "outline-variant": "#E5E7EB",
+                    "error": "#ba1a1a",
+                    "surface-container-high": "#e6e8ec",
+                    "secondary-container": "#708cfd",
+                    "tertiary-fixed-dim": "#c8c6c2",
+                    "on-primary-container": "#888686",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed-variant": "#474746",
+                    "inverse-surface": "#2d3134",
+                    "primary-fixed-dim": "#c8c6c5",
+                    "on-primary-fixed": "#1b1b1c",
+                    "surface-container-low": "#f2f4f8",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#e5e2dd",
+                    "outline": "#747878",
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "primary": "#1F1F1F",
+                    "cobalt": "#1E40AF",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#474743",
+                    "on-surface": "#1F1F1F",
+                    "primary-fixed": "#e5e2e1",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#444748",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed-variant": "#173bab",
+                    "surface-tint": "#5f5e5e",
+                    "on-secondary-container": "#00217a",
+                    "on-secondary-fixed": "#001453",
+                    "on-tertiary-fixed": "#1c1c19",
+                    "tertiary-container": "#1f1f1c",
+                    "on-tertiary-container": "#888682",
+                    "surface-variant": "#e0e2e6",
+                    "primary-container": "#1f1f1f",
+                    "surface-dim": "#d8dade",
+                    "tertiary": "#060605",
+                    "secondary-fixed": "#dde1ff",
+                    "surface-bright": "#FAF7F2",
+                    "secondary": "#1E40AF",
+                    "inverse-on-surface": "#eff1f5",
+                    "background": "#FAF7F2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1280px",
+                    "stack-lg": "32px",
+                    "stack-md": "16px",
+                    "unit": "4px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "48px",
+                    "stack-sm": "8px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-md": ["'Source Sans 3'"],
+                    "label-caps": ["'Source Sans 3'"],
+                    "body-lg": ["'Source Sans 3'"],
+                    "headline-md": ["'Source Serif 4'"],
+                    "data-sm": ["JetBrains Mono"],
+                    "display-lg": ["'Source Serif 4'"],
+                    "display-lg-mobile": ["'Source Serif 4'"],
+                    "data-lg": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "data-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "data-lg": ["20px", {"lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #FAF7F2;
+            color: #1F1F1F;
+            -webkit-font-smoothing: antialiased;
+        }
+        .hairline-b { border-bottom: 1px solid #E5E7EB; }
+        .hairline-r { border-right: 1px solid #E5E7EB; }
+        .hairline-all { border: 1px solid #E5E7EB; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background">
+<!-- TopAppBar from JSON Logic -->
+<header class="bg-surface dark:bg-background border-b border-outline-variant dark:border-outline docked full-width top-0 z-50">
+<div class="flex justify-between items-center px-margin-desktop w-full max-w-container-max mx-auto h-16">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-on-background">World Cup Edge</div>
+<div class="flex items-center space-x-6">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary transition-colors duration-200">refresh</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary transition-colors duration-200">settings</button>
+</div>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-margin-desktop pt-stack-lg">
+<!-- Section 1: Header -->
+<section class="py-stack-lg hairline-b">
+<div class="flex flex-col md:flex-row md:justify-between md:items-end">
+<div>
+<h1 class="font-display-lg text-display-lg mb-unit">England vs Argentina</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">July 15, 2026 · 19:00 UTC · Regulation time (1X2)</p>
+</div>
+<div class="mt-stack-md md:mt-0 text-right">
+<p class="font-label-caps text-label-caps uppercase text-on-surface-variant mb-unit">Time to Match</p>
+<p class="font-data-lg text-data-lg font-bold" id="countdown">02:14:33</p>
+<p class="font-label-caps text-label-caps text-cobalt">Kickoff in countdown</p>
+</div>
+</div>
+</section>
+<!-- Section 2: Focal Point -->
+<section class="py-stack-lg hairline-b">
+<div class="max-w-3xl">
+<p class="font-data-lg text-cobalt text-[64px] leading-tight font-bold mb-unit">+4.2 pp</p>
+<h2 class="font-label-caps text-label-caps uppercase tracking-widest font-bold mb-stack-sm">Gross Consensus Gap — England to win in regulation</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                    TxLINE's consensus probability is 4.2 percentage points higher than Polymarket's best ask for the same outcome.
+                </p>
+</div>
+</section>
+<!-- Section 3: Two-Column Data Section -->
+<section class="grid grid-cols-1 md:grid-cols-2 hairline-b">
+<!-- Left Column: TxLINE -->
+<div class="py-stack-lg pr-gutter hairline-r">
+<div class="flex justify-between items-start mb-stack-md">
+<div>
+<h3 class="font-headline-md text-headline-md mb-unit">TxLINE Consensus</h3>
+<p class="font-label-caps text-label-caps uppercase text-on-surface-variant">England to win (regulation time)</p>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center font-data-sm text-data-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                            TxLINE · live · 11s ago
+                        </span>
+</div>
+</div>
+<div class="mb-stack-lg">
+<span class="font-data-lg text-[48px] leading-none font-bold">54.8%</span>
+</div>
+<div class="space-y-unit font-data-sm text-data-sm text-on-surface-variant">
+<div class="flex items-center">
+<span class="material-symbols-outlined mr-2 text-green-600">check_circle</span>
+                        Teams matched
+                    </div>
+<div class="flex items-center">
+<span class="material-symbols-outlined mr-2 text-green-600">check_circle</span>
+                        Date matched
+                    </div>
+<div class="flex items-center">
+<span class="material-symbols-outlined mr-2 text-green-600">check_circle</span>
+                        Rules: regulation-time 1X2
+                    </div>
+<div class="flex items-center">
+<span class="material-symbols-outlined mr-2 text-green-600">check_circle</span>
+                        Market state: open
+                    </div>
+</div>
+</div>
+<!-- Right Column: Polymarket -->
+<div class="py-stack-lg pl-gutter">
+<div class="flex justify-between items-start mb-stack-md">
+<div>
+<h3 class="font-headline-md text-headline-md mb-unit">Polymarket Top-of-Book Quote</h3>
+<p class="font-label-caps text-label-caps uppercase text-on-surface-variant">England YES · top-of-book quote</p>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center font-data-sm text-data-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                            Polymarket · live · 4s ago
+                        </span>
+</div>
+</div>
+<div class="mb-stack-lg flex items-baseline gap-4">
+<span class="font-data-lg text-[48px] leading-none font-bold">50.6%</span>
+<span class="font-label-caps text-label-caps bg-on-background text-white px-2 py-1">BEST ASK</span>
+</div>
+<div class="mt-stack-lg pt-stack-lg border-t border-outline-variant">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant">Gap after fee</span>
+<span class="font-data-lg text-data-lg text-cobalt font-bold">+3.7 pp</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Status Badges Row -->
+<section class="py-stack-md hairline-b overflow-x-auto whitespace-nowrap">
+<div class="flex space-x-gutter">
+<!-- Loading -->
+<div class="flex items-center font-label-caps text-label-caps text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined mr-unit">sync</span>
+                    LOADING
+                </div>
+<!-- Live (Active) -->
+<div class="flex items-center font-label-caps text-label-caps text-cobalt font-bold border-b-2 border-cobalt pb-1">
+<span class="material-symbols-outlined mr-unit" style="font-variation-settings: 'FILL' 1;">sensors</span>
+                    LIVE
+                </div>
+<!-- Stale -->
+<div class="flex items-center font-label-caps text-label-caps text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined mr-unit">update_disabled</span>
+                    STALE
+                </div>
+<!-- No Alert (Active) -->
+<div class="flex items-center font-label-caps text-label-caps text-cobalt font-bold border-b-2 border-cobalt pb-1">
+<span class="material-symbols-outlined mr-unit" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    NO ALERT
+                </div>
+<!-- Alert -->
+<div class="flex items-center font-label-caps text-label-caps text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined mr-unit">warning</span>
+                    ALERT
+                </div>
+<!-- Unavailable -->
+<div class="flex items-center font-label-caps text-label-caps text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined mr-unit">cloud_off</span>
+                    UNAVAILABLE
+                </div>
+<!-- Error -->
+<div class="flex items-center font-label-caps text-label-caps text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined mr-unit">error</span>
+                    ERROR
+                </div>
+</div>
+</section>
+<!-- Section 5: Session Alerts -->
+<section class="py-stack-lg hairline-b">
+<h2 class="font-headline-md text-headline-md mb-stack-md">Session alerts</h2>
+<div class="w-full border border-outline-variant bg-white/50 p-4">
+<div class="flex flex-col md:flex-row md:items-center font-data-sm text-data-sm gap-4">
+<span class="text-on-surface-variant shrink-0">14:02 UTC</span>
+<span class="font-bold shrink-0">ENG vs ARG</span>
+<span class="text-cobalt font-bold shrink-0">+4.2 pp</span>
+<span class="text-on-surface-variant">TxLINE consensus sits above Polymarket's best ask. Not an arbitrage guarantee.</span>
+<div class="ml-auto flex items-center text-cobalt cursor-pointer hover:underline">
+                        DETAILS <span class="material-symbols-outlined ml-1">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer from JSON Logic -->
+<footer class="bg-surface-container-low dark:bg-surface-container-lowest border-t border-outline-variant dark:border-outline mt-stack-lg">
+<div class="w-full py-stack-lg px-margin-desktop flex flex-col md:flex-row justify-between items-start max-w-container-max mx-auto gap-stack-lg">
+<div class="max-w-2xl">
+<div class="font-label-caps text-label-caps font-bold mb-stack-sm">WORLD CUP EDGE</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-md leading-relaxed">
+                    This is a read-only consensus monitor provided for analytical purposes. This interface is not a trading bot, oracle, or financial advisor. All data is subject to network latency and TxLINE verification proofs.
+                </p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">
+                    © 2024 WORLD CUP EDGE. ALL RIGHTS RESERVED. DATA PROVIDED BY TXLINE & POLYMARKET.
+                </p>
+</div>
+<div class="flex flex-col space-y-2 text-right">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity duration-150" href="#">Terms of Service</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity duration-150" href="#">Privacy Policy</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity duration-150" href="#">Data Disclaimer</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity duration-150" href="#">API Status</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple countdown interaction
+        let timeLeft = 8073; // 2:14:33 in seconds
+        const countdownEl = document.getElementById('countdown');
+        
+        function updateCountdown() {
+            const h = Math.floor(timeLeft / 3600);
+            const m = Math.floor((timeLeft % 3600) / 60);
+            const s = timeLeft % 60;
+            
+            countdownEl.textContent = 
+                `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            
+            if (timeLeft > 0) timeLeft--;
+        }
+        
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // Micro-interaction: Update "live" timestamps occasionally
+        setInterval(() => {
+            const liveTags = document.querySelectorAll('.animate-pulse');
+            liveTags.forEach(tag => {
+                // Subtle flicker effect or data refresh simulation
+            });
+        }, 5000);
+    </script>
+</body></html>

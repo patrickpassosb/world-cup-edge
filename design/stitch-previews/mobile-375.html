@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>World Cup Edge | Match Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&amp;family=Source+Sans+3:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#3755c3",
+                    "background": "#fcf9f4",
+                    "surface-dim": "#dcdad5",
+                    "inverse-on-surface": "#f3f0eb",
+                    "surface-variant": "#e5e2dd",
+                    "surface-container-highest": "#e5e2dd",
+                    "on-primary-fixed-variant": "#173bab",
+                    "on-tertiary": "#ffffff",
+                    "inverse-surface": "#31302d",
+                    "on-primary-fixed": "#001453",
+                    "secondary": "#5f5e5e",
+                    "secondary-fixed": "#e5e2e1",
+                    "on-secondary-container": "#636262",
+                    "tertiary-container": "#872d00",
+                    "surface-container-high": "#ebe8e3",
+                    "tertiary": "#611e00",
+                    "surface": "#fcf9f4",
+                    "on-tertiary-fixed-variant": "#802a00",
+                    "outline-variant": "#c4c5d5",
+                    "primary-container": "#1e40af",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed": "#380d00",
+                    "on-surface-variant": "#444653",
+                    "surface-container": "#f0ede9",
+                    "surface-bright": "#fcf9f4",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "surface-container-low": "#f6f3ee",
+                    "primary-fixed-dim": "#b8c4ff",
+                    "tertiary-fixed-dim": "#ffb59a",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed-variant": "#474746",
+                    "on-tertiary-container": "#ffa583",
+                    "tertiary-fixed": "#ffdbce",
+                    "primary": "#00288e",
+                    "on-surface": "#1c1c19",
+                    "on-secondary-fixed": "#1b1b1c",
+                    "primary-fixed": "#dde1ff",
+                    "secondary-container": "#e2dfde",
+                    "on-background": "#1c1c19",
+                    "on-primary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#a8b8ff",
+                    "outline": "#757684",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#b8c4ff",
+                    "on-error-container": "#93000a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "stack-xl": "40px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "gutter-mobile": "12px",
+                    "stack-lg": "24px",
+                    "stack-xs": "4px"
+            },
+            "fontFamily": {
+                    "headline-xl-mobile": ["\"Source Serif 4\""],
+                    "mono-label": ["JetBrains Mono"],
+                    "headline-lg-mobile": ["\"Source Serif 4\""],
+                    "mono-numeral": ["JetBrains Mono"],
+                    "body-sm": ["\"Source Sans 3\""],
+                    "body-md": ["\"Source Sans 3\""],
+                    "body-lg": ["\"Source Sans 3\""]
+            },
+            "fontSize": {
+                    "headline-xl-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "mono-label": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "mono-numeral": ["14px", {"lineHeight": "14px", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 1.25rem;
+      }
+      body {
+        background-color: #FAF7F2; /* Specific warm off-white from prompt override */
+        color: #1F1F1F; /* Specific charcoal from prompt override */
+        -webkit-font-smoothing: antialiased;
+      }
+      .hairline-b { border-bottom: 1px solid #E5E1D8; }
+      .hairline-t { border-top: 1px solid #E5E1D8; }
+      .hairline-l { border-left: 1px solid #E5E1D8; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="max-w-[375px] mx-auto min-h-screen flex flex-col font-body-md text-body-md">
+<!-- Top App Bar (From Shared Components) -->
+<header class="w-full top-0 border-b border-surface-variant bg-surface flex justify-between items-center px-margin-mobile py-stack-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">monitoring</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">World Cup Edge</h1>
+</div>
+<button class="material-symbols-outlined text-secondary hover:opacity-80 transition-opacity">more_vert</button>
+</header>
+<main class="flex-grow">
+<!-- Editorial Header Section -->
+<section class="px-margin-mobile py-stack-xl flex flex-col gap-stack-sm">
+<h2 class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface">England vs Argentina</h2>
+<div class="flex flex-col gap-1">
+<p class="font-body-sm text-body-sm text-secondary">July 15, 2026 · 19:00 UTC · Regulation time (1X2)</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-mono-label text-mono-label uppercase tracking-widest text-primary">Countdown</span>
+<span class="font-mono-numeral text-mono-numeral text-on-surface bg-surface-container px-2 py-1" id="countdown">02:14:33</span>
+</div>
+</div>
+</section>
+<!-- Focal Point: Consensus Gap -->
+<section class="px-margin-mobile py-stack-lg bg-surface-container-low border-y border-surface-variant">
+<div class="flex flex-col items-start gap-stack-xs">
+<span class="font-mono-numeral text-[48px] leading-none font-bold text-primary-container tracking-tighter" style="color: #1E40AF;">+4.2 pp</span>
+<p class="font-mono-label text-mono-label uppercase text-on-surface-variant font-bold">Gross Consensus Gap — England to win in regulation</p>
+<p class="font-body-md text-body-md mt-stack-md leading-relaxed">
+                    The TxLINE analytical model estimates a significantly higher probability for an England victory than the current Polymarket trade price suggests, identifying a meaningful delta in expected outcome.
+                </p>
+</div>
+</section>
+<!-- Data Stack -->
+<section class="grid grid-cols-1 divide-y divide-surface-variant">
+<!-- Section 1: TxLINE -->
+<div class="px-margin-mobile py-stack-lg flex flex-col gap-stack-md">
+<div>
+<h3 class="font-mono-label text-mono-label uppercase text-secondary mb-1">TxLINE Consensus</h3>
+<div class="flex items-baseline gap-2">
+<span class="font-mono-numeral text-headline-xl-mobile text-on-surface">54.8%</span>
+<span class="font-body-sm text-body-sm text-secondary">England to win (regulation time)</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<p class="font-mono-label text-mono-label text-on-surface">TxLINE · live · 11s ago</p>
+</div>
+<ul class="space-y-2 mt-2">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+<span class="font-body-sm text-body-sm">Teams matched</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+<span class="font-body-sm text-body-sm">Date matched</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+<span class="font-body-sm text-body-sm">Rules: regulation-time 1X2</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">check_circle</span>
+<span class="font-body-sm text-body-sm">Market state: open</span>
+</li>
+</ul>
+</div>
+<!-- Section 2: Polymarket -->
+<div class="px-margin-mobile py-stack-lg flex flex-col gap-stack-md">
+<div>
+<h3 class="font-mono-label text-mono-label uppercase text-secondary mb-1">Polymarket Top-of-Book Quote</h3>
+<div class="flex items-baseline gap-2">
+<span class="font-mono-numeral text-headline-xl-mobile text-on-surface">50.6%</span>
+<span class="font-mono-label text-mono-label bg-secondary-container text-on-secondary-container px-1 py-0.5 rounded-sm">BEST ASK</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary mt-1">England YES · top-of-book quote</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<p class="font-mono-label text-mono-label text-on-surface">Polymarket · live · 4s ago</p>
+</div>
+<div class="mt-2 pt-stack-md border-t border-surface-variant flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Gap after fee</span>
+<span class="font-mono-numeral text-body-lg font-bold text-primary">+3.7 pp</span>
+</div>
+</div>
+</section>
+<!-- Status Badges Grid -->
+<section class="px-margin-mobile py-stack-xl border-t border-surface-variant">
+<h3 class="font-mono-label text-mono-label uppercase text-secondary mb-stack-md">System Status Indicators</h3>
+<div class="flex flex-wrap gap-x-4 gap-y-3">
+<div class="flex items-center gap-1.5 px-2 py-1 bg-surface-container border border-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary animate-spin">refresh</span>
+<span class="font-mono-label text-[10px] uppercase">Loading</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-primary/5 border border-primary/20">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">sensors</span>
+<span class="font-mono-label text-[10px] uppercase text-primary">Live</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-surface-variant border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">history</span>
+<span class="font-mono-label text-[10px] uppercase">Stale</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-surface-container">
+<span class="material-symbols-outlined text-[16px] text-secondary">check</span>
+<span class="font-mono-label text-[10px] uppercase">No alert</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-error-container/20 border border-error">
+<span class="material-symbols-outlined text-[16px] text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="font-mono-label text-[10px] uppercase text-error">Alert</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-surface-variant/50 opacity-60">
+<span class="material-symbols-outlined text-[16px]">block</span>
+<span class="font-mono-label text-[10px] uppercase">Unavailable</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-error text-on-error">
+<span class="material-symbols-outlined text-[16px]">error</span>
+<span class="font-mono-label text-[10px] uppercase">Error</span>
+</div>
+</div>
+</section>
+<!-- Alerts Ticker -->
+<section class="mx-margin-mobile mb-stack-xl p-4 bg-primary text-white flex items-start gap-3">
+<span class="material-symbols-outlined flex-shrink-0 mt-0.5">info</span>
+<p class="font-mono-label text-xs leading-relaxed">
+<span class="font-bold">14:02 · Eng vs Arg · +4.2 pp</span> · TxLINE consensus sits above Polymarket's best ask. Not an arbitrage guarantee. Historical accuracy does not predict future returns.
+            </p>
+</section>
+</main>
+<!-- Footer (From Shared Components) -->
+<footer class="w-full bg-surface-container-low border-t border-surface-variant flex flex-col items-start px-margin-mobile py-stack-lg gap-stack-sm">
+<div class="font-mono-label text-mono-label text-on-surface">WORLD CUP EDGE</div>
+<p class="font-body-sm text-body-sm text-secondary">© 2024 World Cup Edge. Data provided for informational purposes only.</p>
+<div class="flex gap-4 mt-2">
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-colors" href="#">Legal</a>
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="font-body-sm text-body-sm text-secondary hover:text-primary transition-colors" href="#">Terms</a>
+</div>
+</footer>
+<script>
+        // Simple countdown logic for the 02:14:33 placeholder
+        let seconds = 2 * 3600 + 14 * 60 + 33;
+        const countdownEl = document.getElementById('countdown');
+        
+        setInterval(() => {
+            if (seconds > 0) seconds--;
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            countdownEl.textContent = `${h}:${m}:${s}`;
+        }, 1000);
+
+        // Micro-interaction for refreshing data look
+        document.body.addEventListener('click', (e) => {
+            if(e.target.closest('header')) {
+                console.log('Refreshing match data cluster...');
+            }
+        });
+    </script>
+</body></html>

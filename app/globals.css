@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-surface: #faf7f2;
+  --color-surface-dim: #ddd9d8;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f7f3f2;
+  --color-surface-container: #f1edec;
+  --color-surface-container-high: #ebe7e7;
+  --color-surface-container-highest: #e5e2e1;
+
+  --color-on-surface: #1f1f1f;
+  --color-on-surface-variant: #444748;
+
+  --color-outline: #747878;
+  --color-outline-variant: #e5e7eb;
+
+  --color-primary: #1e40af;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #dde1ff;
+
+  --color-secondary: #3755c3;
+  --color-on-secondary: #ffffff;
+
+  --color-tertiary: #611e00;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+
+  --color-stale: #8a6d00;
+  --color-alert: #b45309;
+  --color-success: #15803d;
+
+  --font-serif: var(--font-source-serif-4);
+  --font-sans: var(--font-source-sans-3);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+:root {
+  --background: #faf7f2;
+  --foreground: #1f1f1f;
+}
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-source-sans-3), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.hairline {
+  border-color: var(--color-outline-variant);
+}

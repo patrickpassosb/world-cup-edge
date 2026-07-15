@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>World Cup Edge | Broadcast Data Desk</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@500;700&family=Source+Serif+4:wght@600;700&family=Source+Sans+3:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@100..900&family=Source+Serif+4:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+        body {
+            background-color: #F5EFE2;
+            font-family: 'Inter', sans-serif;
+            color: #15294B;
+        }
+        .font-header { font-family: 'Oswald', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .tabular { font-variant-numeric: tabular-nums; }
+        
+        .border-navy { border-color: #15294B; }
+        .text-navy { color: #15294B; }
+        .bg-navy { background-color: #15294B; }
+        .text-cream { color: #F5EFE2; }
+        .bg-cream { background-color: #F5EFE2; }
+        .border-alert { border-color: #C0392B; }
+        .text-alert { color: #C0392B; }
+        .bg-alert { background-color: #C0392B; }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 1.25rem;
+        }
+        
+        /* Custom Scrollbar for Editorial Look */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #F5EFE2; }
+        ::-webkit-scrollbar-thumb { background: #15294B; }
+
+        .hairline-v { width: 1px; background-color: #15294B; }
+        .hairline-h { height: 1px; background-color: #15294B; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary": "#3755c3",
+                      "on-primary-container": "#888686",
+                      "on-error-container": "#93000a",
+                      "inverse-surface": "#313030",
+                      "on-secondary-container": "#00217a",
+                      "on-error": "#ffffff",
+                      "on-tertiary-container": "#84878a",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed-variant": "#474746",
+                      "inverse-primary": "#c8c6c5",
+                      "background": "#F5EFE2",
+                      "surface-container-highest": "#e5e2e1",
+                      "primary-fixed-dim": "#c8c6c5",
+                      "on-secondary-fixed-variant": "#173bab",
+                      "primary-fixed": "#e5e2e1",
+                      "error": "#C0392B",
+                      "surface-container-low": "#f7f3f2",
+                      "primary-container": "#15294B",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#dde1ff",
+                      "secondary-fixed-dim": "#b8c4ff",
+                      "surface-container-high": "#ebe7e7",
+                      "on-primary": "#F5EFE2",
+                      "outline-variant": "#15294B",
+                      "error-container": "#ffdad6",
+                      "surface-variant": "#e5e2e1",
+                      "surface-dim": "#ddd9d8",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-container": "#708cfd",
+                      "primary": "#15294B",
+                      "surface": "#F5EFE2",
+                      "on-surface-variant": "#444748",
+                      "on-primary-fixed": "#1b1b1c",
+                      "on-surface": "#15294B",
+                      "on-tertiary-fixed": "#191c1f",
+                      "tertiary-fixed-dim": "#c4c7ca",
+                      "tertiary-fixed": "#e0e2e6",
+                      "surface-bright": "#fdf8f8",
+                      "surface-container": "#f1edec",
+                      "tertiary-container": "#1c1f22",
+                      "surface-tint": "#5f5e5e",
+                      "on-background": "#15294B",
+                      "on-tertiary-fixed-variant": "#44474a",
+                      "tertiary": "#040608",
+                      "on-secondary-fixed": "#001453",
+                      "outline": "#15294B",
+                      "inverse-on-surface": "#f4f0ef"
+              },
+              "spacing": {
+                      "container-max": "1280px",
+                      "margin-desktop": "40px",
+                      "gutter": "24px",
+                      "hairline": "1px",
+                      "unit": "4px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Source Serif 4"],
+                      "data-mono": ["JetBrains Mono"],
+                      "headline-lg": ["Source Serif 4"],
+                      "label-caps": ["Source Sans 3"],
+                      "display-lg": ["Source Serif 4"],
+                      "body-md": ["Source Sans 3"],
+                      "body-sm": ["Source Sans 3"],
+                      "body-lg": ["Source Sans 3"]
+              }
+            }
+          }
+        }
+      </script>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- TOP APP BAR (Scoreboard Header) -->
+<header class="bg-navy text-cream flex justify-between items-center w-full px-margin-desktop py-4 sticky top-0 z-50 shadow-sm">
+<div class="flex items-center gap-8">
+<span class="font-header text-3xl font-bold tracking-tight uppercase">England vs Argentina</span>
+<div class="h-8 w-px bg-cream/20"></div>
+<div class="flex flex-col">
+<span class="font-mono text-xs opacity-60 uppercase tracking-widest">Time to Kickoff</span>
+<span class="font-mono text-xl tabular">02:14:33</span>
+</div>
+</div>
+<nav class="hidden md:flex gap-8 items-center">
+<div class="flex flex-col items-end">
+<span class="font-mono text-xs opacity-60 uppercase tracking-widest">Event Identity</span>
+<span class="font-header text-lg uppercase tracking-wide">Jul 15 2026 · 19:00 UTC · REGULATION 1X2</span>
+</div>
+<div class="flex gap-4 ml-8">
+<button class="bg-cream text-navy px-4 py-2 font-header text-sm font-bold uppercase tracking-wider hover:bg-white transition-colors">Monitor Active</button>
+</div>
+</nav>
+</header>
+<!-- MAIN DASHBOARD CONTENT -->
+<main class="flex-grow max-w-container-max mx-auto w-full px-margin-desktop py-10 space-y-12">
+<!-- FOCAL POINT: CENTRAL SCOREBOARD PANEL -->
+<section class="border-2 border-navy">
+<div class="bg-navy p-10 flex flex-col items-center text-center">
+<span class="font-header text-sm tracking-[0.2em] text-cream/70 uppercase mb-4">Gross Consensus Gap — England to Win in Regulation</span>
+<div class="text-8xl md:text-[120px] font-header font-bold text-cream tabular leading-none flex items-start">
+<span class="text-4xl mt-4 mr-2">+</span>
+                    4.2
+                    <span class="text-4xl mt-12 ml-4">pp</span>
+</div>
+</div>
+<div class="bg-cream border-t border-navy p-6 flex justify-center items-center">
+<p class="font-body-md text-body-md max-w-2xl text-center leading-relaxed">
+                    TxLINE's consensus probability is <span class="font-bold underline decoration-navy/30 decoration-2">4.2 percentage points higher</span> than Polymarket's best ask for the same outcome. 
+                </p>
+</div>
+</section>
+<!-- DATA COLUMNS -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-0 border border-navy">
+<!-- LEFT: TxLINE CONSENSUS -->
+<div class="p-8 border-b md:border-b-0 md:border-r border-navy">
+<div class="flex justify-between items-start mb-10">
+<div>
+<h2 class="font-header text-2xl font-bold uppercase tracking-tight mb-1">TxLine Consensus</h2>
+<div class="flex items-center gap-2 text-navy/60 font-mono text-xs uppercase tracking-tighter">
+<span class="w-2 h-2 rounded-full bg-green-600 animate-pulse"></span>
+<span>TxLine · Live · 11s ago</span>
+</div>
+</div>
+<span class="font-header text-5xl font-bold tabular">54.8%</span>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-end border-b border-navy/10 pb-2">
+<span class="font-body-sm text-navy/60">Outcome Target</span>
+<span class="font-body-md font-bold">England to win (regulation time)</span>
+</div>
+<!-- DATA VALIDATION CHECKLIST -->
+<div class="pt-4 grid grid-cols-2 gap-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-navy scale-75">check_circle</span>
+<span class="font-mono text-xs uppercase">Teams matched</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-navy scale-75">check_circle</span>
+<span class="font-mono text-xs uppercase">Date matched</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-navy scale-75">check_circle</span>
+<span class="font-mono text-xs uppercase">Rules: regulation 1X2</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-navy scale-75">check_circle</span>
+<span class="font-mono text-xs uppercase">Market: Open</span>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT: POLYMARKET QUOTE -->
+<div class="p-8">
+<div class="flex justify-between items-start mb-10">
+<div>
+<h2 class="font-header text-2xl font-bold uppercase tracking-tight mb-1">Polymarket Top-of-Book</h2>
+<div class="flex items-center gap-2 text-navy/60 font-mono text-xs uppercase tracking-tighter">
+<span class="w-2 h-2 rounded-full bg-green-600"></span>
+<span>Polymarket · Live · 4s ago</span>
+</div>
+</div>
+<span class="font-header text-5xl font-bold tabular">50.6%</span>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-end border-b border-navy/10 pb-2">
+<span class="font-body-sm text-navy/60">Orderbook Price</span>
+<span class="font-body-md font-bold">England YES · top-of-book ask</span>
+</div>
+<div class="pt-6 bg-navy/5 p-6 border border-dashed border-navy/20">
+<div class="flex justify-between items-center">
+<div class="flex flex-col">
+<span class="font-header text-xs tracking-widest text-navy/60 uppercase">Net Signal Strength</span>
+<span class="font-body-sm text-navy/80 italic">Adjusted for trading slippage/fees</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-header text-3xl font-bold tabular text-navy">+3.7 pp</span>
+<span class="font-mono text-[10px] uppercase font-bold tracking-widest">Gap After Fee</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- STATE BADGES -->
+<section class="flex flex-wrap gap-4 py-6 border-y border-navy/20 justify-center">
+<div class="flex items-center gap-2 px-4 py-2 border border-navy/20 opacity-40">
+<span class="material-symbols-outlined text-sm">sync</span>
+<span class="font-header text-xs uppercase font-bold tracking-widest">Loading</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 border border-navy bg-navy text-cream">
+<span class="material-symbols-outlined text-sm">sensors</span>
+<span class="font-header text-xs uppercase font-bold tracking-widest">Live</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 border border-navy/20 opacity-40">
+<span class="material-symbols-outlined text-sm">history</span>
+<span class="font-header text-xs uppercase font-bold tracking-widest">Stale</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 border border-navy text-navy">
+<span class="material-symbols-outlined text-sm">notifications_off</span>
+<span class="font-header text-xs uppercase font-bold tracking-widest">No Alert</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 border border-alert text-alert font-bold">
+<span class="material-symbols-outlined text-sm">priority_high</span>
+<span class="font-header text-xs uppercase tracking-widest">Alert</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 border border-navy/20 opacity-40">
+<span class="material-symbols-outlined text-sm">block</span>
+<span class="font-header text-xs uppercase font-bold tracking-widest">Unavailable</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 border border-navy/20 opacity-40">
+<span class="material-symbols-outlined text-sm">error</span>
+<span class="font-header text-xs uppercase font-bold tracking-widest">Error</span>
+</div>
+</section>
+<!-- SESSION ALERT HISTORY -->
+<section class="space-y-4">
+<div class="flex justify-between items-end border-b-2 border-navy pb-2">
+<h3 class="font-header text-xl font-bold uppercase tracking-tight">Session Alerts</h3>
+<span class="font-mono text-xs opacity-60">UTC CLOCK: 14:05:22</span>
+</div>
+<div class="space-y-px bg-navy/10 border border-navy/10">
+<div class="bg-cream p-4 grid grid-cols-[100px_150px_100px_1fr] items-center gap-6 hover:bg-navy/5 transition-colors group">
+<span class="font-mono text-sm font-bold opacity-60">14:02:11</span>
+<span class="font-header text-sm uppercase tracking-wide">ENG vs ARG</span>
+<span class="font-mono text-sm font-bold text-navy">+4.2 pp</span>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-navy/80">TxLINE consensus sits above Polymarket's best ask. Not an arbitrage guarantee.</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity text-sm cursor-pointer">open_in_new</span>
+</div>
+</div>
+<div class="bg-cream p-4 grid grid-cols-[100px_150px_100px_1fr] items-center gap-6 hover:bg-navy/5 transition-colors group">
+<span class="font-mono text-sm font-bold opacity-60">13:58:45</span>
+<span class="font-header text-sm uppercase tracking-wide">ENG vs ARG</span>
+<span class="font-mono text-sm font-bold text-navy">+3.9 pp</span>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-navy/80">Market depth increasing on Polymarket side. Probability gap stabilizing.</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity text-sm cursor-pointer">open_in_new</span>
+</div>
+</div>
+<div class="bg-cream p-4 grid grid-cols-[100px_150px_100px_1fr] items-center gap-6 hover:bg-navy/5 transition-colors group opacity-60">
+<span class="font-mono text-sm font-bold opacity-60">13:45:02</span>
+<span class="font-header text-sm uppercase tracking-wide">FRA vs ESP</span>
+<span class="font-mono text-sm font-bold text-navy">-1.1 pp</span>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-navy/80">France consensus converges with open markets within tolerance threshold.</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity text-sm cursor-pointer">open_in_new</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FOOTER -->
+<footer class="bg-navy/5 border-t border-navy/20 py-8 px-margin-desktop mt-auto">
+<div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+<div class="max-w-xl space-y-4">
+<div class="font-header text-lg font-bold uppercase tracking-widest text-navy/40">World Cup Edge</div>
+<p class="font-body-sm text-xs text-navy/60 leading-relaxed uppercase tracking-wider">
+                    Read-only monitor. Not a trading bot. Not a settlement oracle. Users are responsible for all risk associated with independent market activities. This data desk maintains editorial independence and is not affiliated with any sportsbook.
+                </p>
+</div>
+<div class="flex flex-col md:items-end gap-4">
+<div class="flex items-center gap-3">
+<span class="font-mono text-[10px] text-navy/40 uppercase font-bold">Node Integrity</span>
+<div class="px-2 py-1 bg-green-100 text-green-800 font-mono text-[10px] font-bold uppercase tracking-tighter rounded-sm">Verified Proof</div>
+</div>
+<p class="font-body-sm text-[10px] text-navy/40 text-right uppercase tracking-widest max-w-[240px]">
+                    TxLINE proof verifies data provenance for this session. <br/>© 2024 WORLD CUP EDGE. Data desk integrity maintained.
+                </p>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interaction for live ticking time
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toUTCString().split(' ')[4];
+            const clockEl = document.querySelector('.font-mono.text-xs.opacity-60:contains("UTC CLOCK")');
+            // Simplified clock update logic for demonstration
+        }
+        setInterval(updateClock, 1000);
+
+        // Simple tab/hover effect simulation
+        document.querySelectorAll('.group').forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.style.borderLeft = '4px solid #15294B';
+            });
+            row.addEventListener('mouseleave', () => {
+                row.style.borderLeft = 'none';
+            });
+        });
+    </script>
+</body></html>

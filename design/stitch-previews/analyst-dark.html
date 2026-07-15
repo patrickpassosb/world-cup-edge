@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>World Cup Edge | Terminal Monitor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #0B1220;
+            color: #E6EAF2;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 1.1rem;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for terminal feel */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B1220;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E293B;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#1E293B",
+                      "on-surface": "#E6EAF2",
+                      "primary": "#D9A23B",
+                      "on-primary": "#271900",
+                      "outline": "#1E293B",
+                      "outline-variant": "#1E293B",
+                      "background": "#0B1220",
+                      "surface": "#0B1220",
+                      "on-surface-variant": "#94A3B8",
+                      "error": "#F87171",
+                      "success": "#34D399"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter", "sans-serif"],
+                      "mono-data-sm": ["JetBrains Mono", "monospace"],
+                      "headline-sm": ["Inter", "sans-serif"],
+                      "display-lg": ["Inter", "sans-serif"],
+                      "display-amber": ["JetBrains Mono", "monospace"],
+                      "mono-data": ["JetBrains Mono", "monospace"],
+                      "label-caps": ["Inter", "sans-serif"]
+              },
+              "fontSize": {
+                      "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "mono-data-sm": ["11px", {"lineHeight": "1", "fontWeight": "400"}],
+                      "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                      "display-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "display-amber": ["48px", {"lineHeight": "1", "fontWeight": "500"}],
+                      "mono-data": ["13px", {"lineHeight": "1.4", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                      "label-caps": ["11px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}]
+              },
+              "spacing": {
+                "gutter": "16px",
+                "row-height-standard": "48px"
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="font-body-md text-on-surface selection:bg-primary selection:text-on-primary">
+<!-- Main Container: Fixed 1280px Monitor View -->
+<main class="mx-auto w-[1280px] min-h-screen border-x border-outline-variant flex flex-col">
+<!-- HEADER SECTION -->
+<header class="pt-12 pb-8 px-gutter border-b border-outline-variant">
+<div class="flex justify-between items-end">
+<div class="space-y-1">
+<h1 class="font-display-lg text-display-lg tracking-tight uppercase">England vs Argentina</h1>
+<p class="font-label-caps text-label-caps text-on-surface-variant">July 15, 2026 · 19:00 UTC · Regulation time (1X2)</p>
+</div>
+<div class="text-right">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-1">COUNTDOWN</div>
+<div class="font-display-amber text-[24px] text-primary" id="countdown">KICKOFF IN 02:14:33</div>
+</div>
+</div>
+</header>
+<!-- FOCAL POINT: CENTRAL GAP ANALYSIS -->
+<section class="py-16 px-gutter flex flex-col items-center text-center border-b border-outline-variant">
+<div class="font-display-amber text-primary text-[84px] leading-none mb-4 tabular-nums">+4.2 pp</div>
+<div class="font-label-caps text-label-caps tracking-[0.2em] mb-6 text-on-surface">GROSS CONSENSUS GAP — ENGLAND TO WIN IN REGULATION</div>
+<p class="max-w-2xl font-body-md text-on-surface-variant text-lg">
+                TxLINE's consensus probability is <span class="text-primary font-mono-data">4.2 percentage points</span> higher than Polymarket's best ask for the same outcome.
+            </p>
+</section>
+<!-- COMPARISON SECTION: SIDE-BY-SIDE GRID -->
+<section class="grid grid-cols-2 divide-x divide-outline-variant border-b border-outline-variant">
+<!-- LEFT: TxLINE Consensus -->
+<div class="p-10 space-y-8">
+<div>
+<div class="font-display-amber text-[42px] text-on-surface mb-2">54.8%</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">ENGLAND TO WIN (REGULATION TIME)</div>
+</div>
+<div class="flex items-center space-gap gap-2">
+<span class="material-symbols-outlined text-success fill-icon text-sm">circle</span>
+<span class="font-label-caps text-label-caps text-on-surface uppercase">TxLINE · live · 11s ago</span>
+</div>
+<div class="space-y-3 pt-4 border-t border-outline-variant">
+<div class="flex items-center gap-3 font-mono-data text-mono-data">
+<span class="material-symbols-outlined text-success text-[16px]">check</span>
+<span>Teams matched</span>
+</div>
+<div class="flex items-center gap-3 font-mono-data text-mono-data">
+<span class="material-symbols-outlined text-success text-[16px]">check</span>
+<span>Date matched</span>
+</div>
+<div class="flex items-center gap-3 font-mono-data text-mono-data">
+<span class="material-symbols-outlined text-success text-[16px]">check</span>
+<span>Rules: regulation-time 1X2</span>
+</div>
+<div class="flex items-center gap-3 font-mono-data text-mono-data">
+<span class="material-symbols-outlined text-success text-[16px]">check</span>
+<span>Market state: open</span>
+</div>
+</div>
+</div>
+<!-- RIGHT: Polymarket Quote -->
+<div class="p-10 space-y-8 bg-surface-variant/10">
+<div>
+<div class="font-display-amber text-[42px] text-on-surface mb-2">50.6%</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">ENGLAND YES · TOP-OF-BOOK QUOTE (BEST ASK)</div>
+</div>
+<div class="flex items-center space-gap gap-2">
+<span class="material-symbols-outlined text-success fill-icon text-sm">circle</span>
+<span class="font-label-caps text-label-caps text-on-surface uppercase">Polymarket · live · 4s ago</span>
+</div>
+<div class="pt-4 border-t border-outline-variant">
+<div class="inline-flex items-center px-3 py-2 border border-primary text-primary">
+<span class="font-mono-data-sm text-mono-data-sm mr-4 uppercase">Gap after fee</span>
+<span class="font-mono-data text-[18px]">+3.7 pp</span>
+</div>
+</div>
+</div>
+</section>
+<!-- STATE BADGES: HORIZONTAL STATUS ROW -->
+<section class="grid grid-cols-7 divide-x divide-outline-variant border-b border-outline-variant h-14">
+<!-- 1. Loading -->
+<div class="flex items-center justify-center gap-2 text-on-surface-variant opacity-40">
+<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span>
+<span class="font-label-caps text-label-caps">LOADING</span>
+</div>
+<!-- 2. Live (Active) -->
+<div class="flex items-center justify-center gap-2 bg-success/5 text-success">
+<span class="material-symbols-outlined text-[18px] fill-icon">sensors</span>
+<span class="font-label-caps text-label-caps">LIVE</span>
+</div>
+<!-- 3. Stale -->
+<div class="flex items-center justify-center gap-2 text-on-surface-variant opacity-40">
+<span class="material-symbols-outlined text-[18px]">history</span>
+<span class="font-label-caps text-label-caps">STALE</span>
+</div>
+<!-- 4. No Alert (Active) -->
+<div class="flex items-center justify-center gap-2 bg-surface-variant/20 text-on-surface">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="font-label-caps text-label-caps">NO ALERT</span>
+</div>
+<!-- 5. Alert -->
+<div class="flex items-center justify-center gap-2 text-on-surface-variant opacity-40">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+<span class="font-label-caps text-label-caps">ALERT</span>
+</div>
+<!-- 6. Unavailable -->
+<div class="flex items-center justify-center gap-2 text-on-surface-variant opacity-40">
+<span class="material-symbols-outlined text-[18px]">block</span>
+<span class="font-label-caps text-label-caps">UNAVAILABLE</span>
+</div>
+<!-- 7. Error -->
+<div class="flex items-center justify-center gap-2 text-on-surface-variant opacity-40">
+<span class="material-symbols-outlined text-[18px]">error</span>
+<span class="font-label-caps text-label-caps">ERROR</span>
+</div>
+</section>
+<!-- SESSION ALERT HISTORY -->
+<section class="flex-grow px-gutter py-8 flex flex-col">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-6 uppercase tracking-widest">Session alerts</div>
+<div class="flex-grow space-y-0.5">
+<!-- Single Alert Row -->
+<div class="grid grid-cols-[auto_1fr] gap-6 py-3 border-b border-outline-variant hover:bg-surface-variant/10 transition-colors">
+<span class="font-mono-data text-on-surface-variant">14:02</span>
+<div class="flex gap-4">
+<span class="font-mono-data text-primary font-bold">ENG VS ARG</span>
+<span class="font-mono-data text-primary">+4.2 PP</span>
+<span class="font-body-md text-on-surface">TxLINE consensus sits above Polymarket's best ask. <span class="text-on-surface-variant italic">Not an arbitrage guarantee.</span></span>
+</div>
+</div>
+<!-- Historical Filler (Empty States) -->
+<div class="grid grid-cols-[auto_1fr] gap-6 py-3 border-b border-outline-variant opacity-20">
+<span class="font-mono-data">13:45</span>
+<span class="font-body-md italic text-on-surface-variant">System ping: Connectivity nominal...</span>
+</div>
+<div class="grid grid-cols-[auto_1fr] gap-6 py-3 border-b border-outline-variant opacity-10">
+<span class="font-mono-data">13:30</span>
+<span class="font-body-md italic text-on-surface-variant">Market initialization sequence complete...</span>
+</div>
+</div>
+</section>
+<!-- FOOTER -->
+<footer class="p-gutter border-t border-outline-variant">
+<div class="flex justify-between items-center text-[10px] uppercase tracking-wider text-on-surface-variant/60 font-label-caps">
+<div class="flex gap-8">
+<span>Read-only monitor</span>
+<span>Not a trading bot</span>
+<span>System v1.0.4-LHR</span>
+</div>
+<div class="text-right">
+                    TxLINE proof verifies data provenance, not signal correctness.
+                </div>
+</div>
+</footer>
+</main>
+<!-- Micro-interactions Script -->
+<script>
+        // Simple countdown logic
+        function updateCountdown() {
+            const now = new Date();
+            const kickoff = new Date();
+            kickoff.setHours(kickoff.getHours() + 2);
+            kickoff.setMinutes(kickoff.getMinutes() + 14);
+            kickoff.setSeconds(kickoff.getSeconds() + 33);
+
+            const diff = kickoff - now;
+            
+            const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+            const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+
+            document.getElementById('countdown').innerText = `KICKOFF IN ${h}:${m}:${s}`;
+        }
+
+        setInterval(updateCountdown, 1000);
+
+        // Simulated pulse for the live indicators
+        const indicators = document.querySelectorAll('.fill-icon');
+        setInterval(() => {
+            indicators.forEach(ind => {
+                ind.style.opacity = ind.style.opacity === '0.4' ? '1' : '0.4';
+                ind.style.transition = 'opacity 0.8s ease';
+            });
+        }, 1200);
+    </script>
+</body></html>

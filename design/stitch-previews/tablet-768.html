@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=768, initial-scale=1.0" name="viewport"/>
+<title>World Cup Edge - Analytical Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#e6e8ec",
+                        "tertiary": "#060605",
+                        "on-primary-container": "#888686",
+                        "on-secondary-fixed": "#001453",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "tertiary-fixed": "#e5e2dd",
+                        "primary": "#060607",
+                        "primary-fixed": "#e5e2e1",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#00217a",
+                        "on-background": "#191c1f",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e0e2e6",
+                        "on-tertiary-fixed": "#1c1c19",
+                        "background": "#FAF7F2", /* Overridden to brand specific warm-off-white */
+                        "surface-variant": "#e0e2e6",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-surface": "#1F1F1F", /* Overridden to brand charcoal */
+                        "primary-fixed-dim": "#c8c6c5",
+                        "surface-container": "#eceef2",
+                        "secondary-fixed": "#dde1ff",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f8",
+                        "surface": "#FAF7F2",
+                        "on-tertiary-container": "#888682",
+                        "surface-bright": "#FAF7F2",
+                        "surface-tint": "#5f5e5e",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#c8c6c5",
+                        "secondary-fixed-dim": "#b8c4ff",
+                        "secondary-container": "#1E40AF", /* Cobalt Accent */
+                        "on-surface-variant": "#444748",
+                        "on-tertiary-fixed-variant": "#474743",
+                        "outline": "#1F1F1F",
+                        "primary-container": "#1f1f1f",
+                        "secondary": "#1E40AF",
+                        "outline-variant": "#E5E7EB",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#1b1b1c",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2d3134",
+                        "on-primary-fixed-variant": "#474746",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#d8dade",
+                        "on-secondary-fixed-variant": "#173bab",
+                        "tertiary-container": "#1f1f1c"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "margin-mobile": "16px",
+                        "stack-md": "16px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "stack-lg": "32px",
+                        "margin-desktop": "48px",
+                        "container-max": "768px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "display-lg": ["\"Source Serif 4\""],
+                        "data-lg": ["JetBrains Mono"],
+                        "body-md": ["\"Source Sans 3\""],
+                        "label-caps": ["\"Source Sans 3\""],
+                        "data-sm": ["JetBrains Mono"],
+                        "body-lg": ["\"Source Sans 3\""],
+                        "headline-md": ["\"Source Serif 4\""]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FAF7F2;
+            color: #1F1F1F;
+            width: 768px;
+            margin: 0 auto;
+            border-left: 1px solid #E5E7EB;
+            border-right: 1px solid #E5E7EB;
+            min-height: 100vh;
+        }
+        .hairline-b { border-bottom: 1px solid #E5E7EB; }
+        .hairline-r { border-right: 1px solid #E5E7EB; }
+        .hairline-l { border-left: 1px solid #E5E7EB; }
+        .hairline-t { border-top: 1px solid #E5E7EB; }
+        
+        .material-symbols-outlined {
+            font-size: 18px;
+            vertical-align: middle;
+        }
+
+        /* Custom Scrollbar for Editorial Feel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #FAF7F2; }
+        ::-webkit-scrollbar-thumb { background: #1F1F1F; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md selection:bg-secondary selection:text-white">
+<!-- Top App Bar (Shared Component Logic Applied) -->
+<header class="hairline-b bg-surface flex justify-between items-center px-margin-desktop h-16 w-full">
+<div class="font-headline-md text-headline-md font-bold text-primary">WORLD CUP EDGE</div>
+<div class="flex items-center space-x-stack-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-secondary transition-colors">refresh</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-secondary transition-colors">settings</span>
+</div>
+</header>
+<main class="max-w-container-max mx-auto">
+<!-- 1. Header: Match Details -->
+<section class="px-margin-desktop py-stack-lg hairline-b">
+<div class="flex justify-between items-end">
+<div>
+<h1 class="font-display-lg text-display-lg leading-tight mb-unit">England vs Argentina</h1>
+<p class="font-label-caps text-label-caps text-on-surface-variant">July 15, 2026 · 19:00 UTC · Regulation time (1X2)</p>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-unit">KICKOFF IN</p>
+<p class="font-data-lg text-data-lg tracking-tighter">02:14:33</p>
+</div>
+</div>
+</section>
+<!-- 2. Focal Point: Consensus Gap -->
+<section class="px-margin-desktop py-stack-lg hairline-b">
+<div class="flex flex-col items-start">
+<div class="font-data-lg text-[64px] leading-none text-secondary font-bold mb-stack-sm tracking-tighter">
+                    +4.2 <span class="text-[32px]">pp</span>
+</div>
+<h2 class="font-label-caps text-label-caps tracking-[0.1em] text-primary mb-stack-sm">GROSS CONSENSUS GAP — ENGLAND TO WIN IN REGULATION</h2>
+<p class="font-body-lg text-body-lg max-w-2xl text-on-surface-variant">
+                    The TxLINE probabilistic consensus significantly outpaces the current market valuation on Polymarket. This indicates a potential directional edge where institutional forecasting models show a higher probability of an England victory than the current public trading price reflects.
+                </p>
+</div>
+</section>
+<!-- 3. Two-Column Data Section -->
+<section class="grid grid-cols-2 hairline-b">
+<!-- Left Column: TxLINE -->
+<div class="px-margin-desktop py-stack-lg hairline-r">
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-label-caps text-label-caps">TXLINE CONSENSUS</h3>
+<div class="flex items-center text-error font-bold">
+<span class="w-2 h-2 rounded-full bg-error mr-2 animate-pulse"></span>
+<span class="font-label-caps text-[10px]">LIVE</span>
+</div>
+</div>
+<div class="font-data-lg text-display-lg-mobile mb-unit">54.8%</div>
+<p class="font-body-md text-on-surface-variant mb-stack-md">England to win (regulation time)</p>
+<div class="space-y-stack-sm mb-stack-lg">
+<div class="flex items-center text-on-surface">
+<span class="material-symbols-outlined mr-2 text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-caps text-[11px]">PROJECTED SQUAD STRENGTH MATCHED</span>
+</div>
+<div class="flex items-center text-on-surface">
+<span class="material-symbols-outlined mr-2 text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-caps text-[11px]">HISTORICAL ELO VARIANCE ACCOUNTED</span>
+</div>
+<div class="flex items-center text-on-surface">
+<span class="material-symbols-outlined mr-2 text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-caps text-[11px]">WEATHER ATTENUATION MODEL ACTIVE</span>
+</div>
+<div class="flex items-center text-on-surface">
+<span class="material-symbols-outlined mr-2 text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-caps text-[11px]">MARKET LIQUIDITY THRESHOLD MET</span>
+</div>
+</div>
+<div class="font-label-caps text-[10px] text-on-primary-container">TXLINE · LIVE · 11S AGO</div>
+</div>
+<!-- Right Column: Polymarket -->
+<div class="px-margin-desktop py-stack-lg">
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-label-caps text-label-caps">POLYMARKET TOP-OF-BOOK</h3>
+<span class="bg-primary text-white px-2 py-0.5 font-label-caps text-[10px]">BEST ASK</span>
+</div>
+<div class="font-data-lg text-display-lg-mobile mb-unit">50.6%</div>
+<p class="font-body-md text-on-surface-variant mb-stack-md">England YES · top-of-book quote</p>
+<div class="mt-stack-lg pt-stack-lg border-t border-dashed border-outline-variant">
+<div class="flex justify-between items-center mb-stack-sm">
+<span class="font-label-caps text-on-surface-variant">GROSS EDGE</span>
+<span class="font-data-sm text-secondary">+4.2 pp</span>
+</div>
+<div class="flex justify-between items-center mb-stack-sm">
+<span class="font-label-caps text-on-surface-variant">TRADING FEE (EST)</span>
+<span class="font-data-sm">-0.5 pp</span>
+</div>
+<div class="flex justify-between items-center pt-stack-sm border-t border-outline-variant">
+<span class="font-label-caps font-bold">GAP AFTER FEE</span>
+<span class="font-data-lg text-secondary">+3.7 pp</span>
+</div>
+</div>
+<div class="font-label-caps text-[10px] text-on-primary-container mt-6">POLYMARKET · LIVE · 4S AGO</div>
+</div>
+</section>
+<!-- 4. State Badges Row -->
+<section class="px-margin-desktop py-stack-md hairline-b flex flex-wrap gap-gutter">
+<div class="flex items-center gap-2 opacity-40">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span class="font-label-caps text-[10px]">LOADING</span>
+</div>
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">sensors</span>
+<span class="font-label-caps text-[10px]">LIVE</span>
+</div>
+<div class="flex items-center gap-2 opacity-40">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span class="font-label-caps text-[10px]">STALE</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[16px]">notifications_off</span>
+<span class="font-label-caps text-[10px]">NO ALERT</span>
+</div>
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="font-label-caps text-[10px]">ALERT</span>
+</div>
+<div class="flex items-center gap-2 opacity-40">
+<span class="material-symbols-outlined text-[16px]">block</span>
+<span class="font-label-caps text-[10px]">UNAVAILABLE</span>
+</div>
+<div class="flex items-center gap-2 opacity-40">
+<span class="material-symbols-outlined text-[16px]">error</span>
+<span class="font-label-caps text-[10px]">ERROR</span>
+</div>
+</section>
+<!-- 5. Session Alerts -->
+<section class="px-margin-desktop py-stack-lg">
+<h3 class="font-label-caps text-label-caps mb-stack-md text-on-surface-variant">RECENT SESSION ALERTS</h3>
+<div class="hairline-t">
+<div class="grid grid-cols-[80px_120px_100px_1fr] py-stack-md hairline-b items-center bg-white/50">
+<div class="font-data-sm text-on-surface-variant">14:02</div>
+<div class="font-label-caps font-bold">ENG VS ARG</div>
+<div class="font-data-sm text-secondary font-bold">+4.2 pp</div>
+<div class="font-body-md text-on-surface-variant">
+                        TxLINE consensus sits above Polymarket's best ask. Not an arbitrage guarantee.
+                    </div>
+</div>
+<div class="grid grid-cols-[80px_120px_100px_1fr] py-stack-md hairline-b items-center">
+<div class="font-data-sm text-on-surface-variant">13:58</div>
+<div class="font-label-caps font-bold">ENG VS ARG</div>
+<div class="font-data-sm text-on-surface-variant">+2.1 pp</div>
+<div class="font-body-md text-on-surface-variant">
+                        Initial convergence detected. Spreads tightening on secondary markets.
+                    </div>
+</div>
+<div class="grid grid-cols-[80px_120px_100px_1fr] py-stack-md hairline-b items-center">
+<div class="font-data-sm text-on-surface-variant">13:45</div>
+<div class="font-label-caps font-bold">FRA VS ESP</div>
+<div class="font-data-sm text-error font-bold">-1.2 pp</div>
+<div class="font-body-md text-on-surface-variant">
+                        Consensus gap inverted. Market pricing exceeds probabilistic model expectations.
+                    </div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component Logic Applied) -->
+<footer class="hairline-t bg-surface-container-low w-full py-stack-lg px-margin-desktop">
+<div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-start gap-gutter">
+<div class="max-w-md">
+<div class="font-label-caps text-label-caps font-bold mb-stack-sm">DATA PROVENANCE &amp; DISCLAIMER</div>
+<p class="font-body-md text-[13px] leading-relaxed text-on-surface-variant">
+                    World Cup Edge is a read-only monitoring interface. All data is provided "as is" by TxLINE and Polymarket. This dashboard does not facilitate wagering or financial transactions. Probabilistic models (pp) represent statistical variance and are not guarantees of outcome. Read-only monitor mode active. No execution capabilities present in this build.
+                </p>
+</div>
+<div class="flex flex-col items-end gap-stack-sm">
+<div class="flex gap-stack-md">
+<a class="font-label-caps text-[11px] text-on-surface-variant hover:text-primary transition-opacity underline" href="#">Terms of Service</a>
+<a class="font-label-caps text-[11px] text-on-surface-variant hover:text-primary transition-opacity underline" href="#">Privacy Policy</a>
+<a class="font-label-caps text-[11px] text-on-surface-variant hover:text-primary transition-opacity underline" href="#">Data Disclaimer</a>
+<a class="font-label-caps text-[11px] text-on-surface-variant hover:text-primary transition-opacity underline" href="#">API Status</a>
+</div>
+<p class="font-label-caps text-[10px] text-on-primary-container mt-stack-md">
+                    © 2024 WORLD CUP EDGE. ALL RIGHTS RESERVED. DATA PROVIDED BY TXLINE &amp; POLYMARKET.
+                </p>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interaction for live ticking time or data updates
+        function updateTime() {
+            const now = new Date();
+            // In a real app, this would fetch from a server for sync
+        }
+        setInterval(updateTime, 1000);
+
+        // Hover effect for table rows
+        document.querySelectorAll('.grid.py-stack-md').forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.classList.add('bg-white');
+            });
+            row.addEventListener('mouseleave', () => {
+                row.classList.remove('bg-white');
+            });
+        });
+    </script>
+</body></html>

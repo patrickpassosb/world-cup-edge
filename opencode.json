@@ -8,6 +8,10 @@
       "headers": {
         "X-Goog-Api-Key": "{env:GOOGLE_STITCH_API_KEY}"
       }
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest"]
     }
   }
 }
