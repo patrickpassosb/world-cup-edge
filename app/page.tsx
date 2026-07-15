@@ -6,8 +6,11 @@ import {
   CheckCircle,
   Circle,
   Clock,
+  Filter,
   Loader,
   Radio,
+  RefreshCw,
+  Settings,
   WifiOff,
   XCircle,
 } from "lucide-react";
@@ -148,7 +151,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-full flex-col">
       <TopBar />
-      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 pt-8 md:px-12">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8 md:px-8">
         <HeaderSection countdown={countdown} snapshot={snapshot} />
         <FocalPointSection snapshot={snapshot} displayState={displayState} />
         <TwoColumnSection snapshot={snapshot} displayState={displayState} />
@@ -162,11 +165,21 @@ export default function DashboardPage() {
 
 function TopBar() {
   return (
-    <header className="border-b border-outline-variant">
-      <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-4 md:px-12">
-        <div className="font-serif text-2xl font-bold text-on-surface">World Cup Edge</div>
-        <div className="flex items-center gap-4 text-sm text-on-surface-variant">
-          <span className="font-mono">Read-only monitor</span>
+    <header className="border-b-2 border-on-surface">
+      <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-4 md:h-[72px] md:px-8">
+        <div className="font-sans text-2xl font-bold tracking-tight text-on-surface md:text-[38px] md:leading-none">
+          WORLD CUP EDGE
+        </div>
+        <div className="flex items-center gap-4 text-on-surface md:gap-6">
+          <span className="hidden items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant md:inline-flex">
+            <Radio className="h-4 w-4" aria-hidden="true" />
+            Live feed active
+          </span>
+          <span className="flex items-center gap-3" aria-hidden="true">
+            <Filter className="h-[18px] w-[18px]" />
+            <RefreshCw className="h-[18px] w-[18px]" />
+            <Settings className="h-[18px] w-[18px]" />
+          </span>
         </div>
       </div>
     </header>
@@ -185,22 +198,26 @@ function HeaderSection({
   const matchRules = snapshot?.match.rules ?? MATCH.rules;
 
   return (
-    <section className="border-b border-outline-variant py-8">
+    <section className="mb-8 border-b border-outline-variant pb-1 md:mb-12">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h1 className="font-serif text-5xl font-bold leading-tight text-on-surface">
+          <h1 className="font-sans text-[30px] font-bold leading-9 tracking-[-0.02em] text-on-surface md:text-[40px] md:leading-[48px]">
             {matchName}
           </h1>
-          <p className="mt-2 text-lg text-on-surface-variant">
+          <p className="text-base italic text-on-surface-variant">
             {matchDate} · 19:00 UTC · {matchRules}
           </p>
         </div>
         <div className="text-left md:text-right">
-          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-            Time to Match
+          <p className="text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+            Next event start
           </p>
-          <p className="font-mono text-xl font-bold tabular-nums text-on-surface">{countdown}</p>
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">Kickoff countdown</p>
+          <p
+            suppressHydrationWarning
+            className="font-mono text-xl font-medium tracking-tight tabular-nums text-on-surface md:text-2xl"
+          >
+            Kickoff in {countdown}
+          </p>
         </div>
       </div>
     </section>
@@ -216,11 +233,11 @@ function FocalPointSection({
 }) {
   if (displayState === "loading") {
     return (
-      <section className="border-b border-outline-variant py-8">
-        <div className="max-w-3xl">
-          <div className="mb-2 h-16 w-40 animate-pulse rounded bg-surface-container-high" />
-          <div className="mb-4 h-4 w-96 max-w-full animate-pulse rounded bg-surface-container-high" />
-          <div className="h-4 w-80 max-w-full animate-pulse rounded bg-surface-container" />
+      <section className="border-b border-outline-variant py-16 text-center">
+        <div className="inline-block max-w-full">
+          <div className="mx-auto mb-2 h-24 w-96 max-w-full animate-pulse bg-surface-container-high" />
+          <div className="mx-auto mb-4 h-4 w-[420px] max-w-full animate-pulse bg-surface-container-high" />
+          <div className="mx-auto h-12 w-[576px] max-w-full animate-pulse border-t border-on-surface bg-surface-container" />
         </div>
       </section>
     );
@@ -228,25 +245,34 @@ function FocalPointSection({
 
   const gapValue = snapshot?.gap.gapAfterFee ?? null;
   const isAlert = displayState === "alert";
+  const isUnavailable = displayState === "unavailable";
   const gapColor = isAlert ? "text-alert" : "text-primary";
   const explanation = snapshot ? buildExplanation(snapshot) : "";
 
   return (
-    <section className="border-b border-outline-variant py-8">
-      <div className="max-w-3xl">
-        <p className={`mb-2 font-mono text-6xl font-bold leading-tight tabular-nums ${gapColor}`}>
+    <section className="border-b border-outline-variant py-12 text-center md:py-16">
+      <div className="inline-block max-w-full">
+        <p
+          className={`mb-2 font-mono text-[64px] font-bold leading-none tracking-tight tabular-nums md:text-[96px] ${gapColor}`}
+        >
           {formatPp(gapValue)}
         </p>
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+        <h2 className="mb-4 font-sans text-xs font-bold uppercase tracking-[0.2em] text-on-surface">
           {isAlert ? "Consensus Gap Alert — England to win in regulation" : "Gross Consensus Gap — England to win in regulation"}
         </h2>
-        <p className="max-w-2xl text-lg text-on-surface-variant">
+        <p className="mx-auto max-w-xl border-t border-on-surface pt-4 text-base leading-6 text-on-surface">
           {explanation}
         </p>
         {isAlert && (
           <p className="mt-3 text-sm font-medium text-alert">
             <AlertTriangle className="mr-1 inline-block h-4 w-4 align-text-bottom" />
             Gap exceeds {formatPp(snapshot?.gap.threshold ?? 0.05)} threshold after fee. Not an arbitrage guarantee.
+          </p>
+        )}
+        {isUnavailable && (
+          <p className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-stale">
+            <WifiOff className="h-4 w-4" aria-hidden="true" />
+            {snapshot?.errorMessage ?? "Source unavailable. No comparison generated."}
           </p>
         )}
       </div>
@@ -262,7 +288,7 @@ function TwoColumnSection({
   displayState: DisplayState;
 }) {
   return (
-    <section className="grid grid-cols-1 border-b border-outline-variant md:grid-cols-2">
+    <section className="grid grid-cols-1 border-b border-outline-variant md:min-h-[628px] md:grid-cols-2">
       <TxlineColumn snapshot={snapshot} displayState={displayState} />
       <div className="border-t border-outline-variant md:border-t-0">
         <PolymarketColumn snapshot={snapshot} displayState={displayState} />
@@ -287,28 +313,26 @@ function TxlineColumn({
 
   if (displayState === "loading") {
     return (
-      <div className="border-b border-outline-variant py-8 pr-0 md:border-b-0 md:border-r md:pr-6">
-        <div className="mb-6 h-6 w-48 animate-pulse rounded bg-surface-container-high" />
-        <div className="mb-6 h-12 w-28 animate-pulse rounded bg-surface-container-high" />
+      <div className="border-b border-outline-variant py-10 pr-0 md:border-b-0 md:border-r md:py-12 md:pr-6">
+        <div className="mb-8 h-4 w-48 animate-pulse bg-surface-container-high" />
+        <div className="mb-3 h-16 w-40 animate-pulse bg-surface-container-high" />
+        <div className="mb-12 h-5 w-56 animate-pulse bg-surface-container" />
         <div className="space-y-2">
-          <div className="h-4 w-40 animate-pulse rounded bg-surface-container" />
-          <div className="h-4 w-44 animate-pulse rounded bg-surface-container" />
-          <div className="h-4 w-48 animate-pulse rounded bg-surface-container" />
-          <div className="h-4 w-40 animate-pulse rounded bg-surface-container" />
+          <div className="h-4 w-full animate-pulse border-t border-outline-variant bg-surface-container" />
+          <div className="h-4 w-full animate-pulse bg-surface-container" />
+          <div className="h-4 w-full animate-pulse bg-surface-container" />
+          <div className="h-4 w-full animate-pulse bg-surface-container" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="border-b border-outline-variant py-8 pr-0 md:border-b-0 md:border-r md:pr-6">
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h3 className="font-serif text-2xl font-semibold text-on-surface">TxLINE Consensus</h3>
-          <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-            England to win (regulation time)
-          </p>
-        </div>
+    <div className="flex flex-col border-b border-outline-variant py-10 pr-0 md:border-b-0 md:border-r md:py-12 md:pr-6">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <h3 className="font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+          TxLINE Consensus
+        </h3>
         <FreshnessIndicator
           label="TxLINE"
           fresh={fresh && !isStale}
@@ -316,12 +340,13 @@ function TxlineColumn({
           delayed={delayed}
         />
       </div>
-      <div className="mb-8">
-        <span className="font-mono text-5xl font-bold leading-none tabular-nums text-on-surface">
+      <div className="mb-12">
+        <span className="font-mono text-[56px] font-medium leading-none tracking-tight tabular-nums text-on-surface md:text-[64px]">
           {formatPct(probability)}
         </span>
+        <p className="mt-2 text-base text-on-surface-variant">England to win (regulation time)</p>
       </div>
-      <div className="space-y-2 text-sm text-on-surface-variant">
+      <div className="space-y-4 border-t border-outline-variant pt-8">
         <CheckRow passed={checks?.teams ?? false} label="Teams matched" />
         <CheckRow passed={checks?.date ?? false} label="Date matched" />
         <CheckRow passed={checks?.rules ?? false} label="Rules: regulation-time 1X2" />
@@ -347,25 +372,21 @@ function PolymarketColumn({
 
   if (displayState === "loading") {
     return (
-      <div className="py-8 pl-0 md:pl-6">
-        <div className="mb-6 h-6 w-56 animate-pulse rounded bg-surface-container-high" />
-        <div className="mb-6 h-12 w-28 animate-pulse rounded bg-surface-container-high" />
-        <div className="mt-8 h-4 w-40 animate-pulse rounded bg-surface-container" />
+      <div className="py-10 pl-0 md:py-12 md:pl-6">
+        <div className="mb-8 h-4 w-56 animate-pulse bg-surface-container-high" />
+        <div className="mb-3 h-16 w-40 animate-pulse bg-surface-container-high" />
+        <div className="mb-12 h-5 w-56 animate-pulse bg-surface-container" />
+        <div className="ml-auto mt-24 h-10 w-32 animate-pulse bg-surface-container" />
       </div>
     );
   }
 
   return (
-    <div className="py-8 pl-0 md:pl-6">
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h3 className="font-serif text-2xl font-semibold text-on-surface">
-            Polymarket Top-of-Book Quote
-          </h3>
-          <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-            England YES · top-of-book quote
-          </p>
-        </div>
+    <div className="flex h-full flex-col py-10 pl-0 md:py-12 md:pl-6">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <h3 className="font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+          Polymarket Top-of-Book Quote
+        </h3>
         <FreshnessIndicator
           label="Polymarket"
           fresh={fresh && !isStale}
@@ -373,25 +394,26 @@ function PolymarketColumn({
           delayed={false}
         />
       </div>
-      <div className="mb-8 flex items-baseline gap-3">
-        <span className="font-mono text-5xl font-bold leading-none tabular-nums text-on-surface">
-          {formatPct(bestAsk)}
-        </span>
-        {!isUnavailable && bestAsk !== null && (
-          <span className="bg-on-surface px-2 py-1 text-xs font-bold uppercase tracking-widest text-white">
-            best ask
+      <div className="mb-12">
+        <div className="flex items-baseline gap-2">
+          <span className="font-mono text-[56px] font-medium leading-none tracking-tight tabular-nums text-on-surface md:text-[64px]">
+            {formatPct(bestAsk)}
           </span>
-        )}
-      </div>
-      <div className="mt-8 border-t border-outline-variant pt-6">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-            Gap after fee
-          </span>
-          <span className="font-mono text-xl font-bold tabular-nums text-primary">
-            {formatPp(gapAfterFee)}
-          </span>
+          {!isUnavailable && bestAsk !== null && (
+            <span className="border border-on-surface px-1 font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface">
+              best ask
+            </span>
+          )}
         </div>
+        <p className="mt-2 text-base text-on-surface-variant">England YES · top-of-book quote</p>
+      </div>
+      <div className="mt-16 text-right">
+        <span className="block font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+          Gap after fee
+        </span>
+        <span className="font-mono text-2xl font-medium tracking-tight tabular-nums text-primary">
+          {formatPp(gapAfterFee)}
+        </span>
       </div>
     </div>
   );
@@ -410,16 +432,21 @@ function FreshnessIndicator({
 }) {
   return (
     <div className="text-right">
-      <span className="inline-flex items-center font-mono text-sm text-on-surface-variant">
+      <span
+        className={`inline-flex items-center font-sans text-xs font-bold uppercase tracking-[0.05em] ${
+          fresh ? "text-primary" : "text-stale"
+        }`}
+      >
         {fresh ? (
-          <span className="mr-2 h-2 w-2 animate-pulse rounded-full bg-success" />
+          <span className="mr-1.5 h-1.5 w-1.5 animate-pulse bg-primary" />
         ) : (
-          <span className="mr-2 h-2 w-2 rounded-full bg-stale" />
+          <span className="mr-1.5 h-1.5 w-1.5 bg-stale" />
         )}
-        {label} · {fresh ? "live" : "stale"} · {age}
+        <span className="sr-only">{label} </span>
+        {fresh ? "live" : "stale"} · {age}
       </span>
       {delayed && (
-        <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stale">
+        <p className="mt-1 text-xs font-bold uppercase tracking-[0.05em] text-stale">
           60-second delayed
         </p>
       )}
@@ -429,13 +456,11 @@ function FreshnessIndicator({
 
 function CheckRow({ passed, label }: { passed: boolean; label: string }) {
   return (
-    <div className="flex items-center">
-      {passed ? (
-        <CheckCircle className="mr-2 h-4 w-4 text-success" />
-      ) : (
-        <XCircle className="mr-2 h-4 w-4 text-error" />
-      )}
+    <div className="flex items-center justify-between font-mono text-sm uppercase tracking-[0.04em] text-on-surface-variant">
       <span>{label}</span>
+      <span className={passed ? "font-bold text-on-surface" : "font-bold text-error"}>
+        {passed ? "✓" : "×"}
+      </span>
     </div>
   );
 }
@@ -456,20 +481,22 @@ const STATUS_BADGES: {
 
 function StatusBadges({ displayState }: { displayState: DisplayState }) {
   return (
-    <section className="overflow-x-auto whitespace-nowrap border-b border-outline-variant py-4">
-      <div className="flex gap-6">
+    <section className="mb-12 border-y border-on-surface py-8 md:py-12">
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 md:gap-x-8">
         {STATUS_BADGES.map(({ state, label, Icon }) => {
-          const active = displayState === state;
+          const active =
+            displayState === state ||
+            (state === "live" && (displayState === "no-alert" || displayState === "alert"));
           return (
             <div
               key={state}
-              className={`flex items-center text-xs font-bold uppercase tracking-widest ${
+              className={`flex items-center font-sans text-xs font-bold uppercase tracking-[0.05em] ${
                 active
                   ? "border-b-2 border-primary pb-1 text-primary"
-                  : "text-on-surface-variant opacity-50"
+                  : "text-state-muted"
               }`}
             >
-              <Icon className="mr-1 h-4 w-4" />
+              <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
               {label}
             </div>
           );
@@ -488,66 +515,82 @@ function SessionAlertsSection({
 }) {
   if (displayState === "error" && alerts.length === 0) {
     return (
-      <section className="border-b border-outline-variant py-8">
-        <h2 className="mb-4 font-serif text-2xl font-semibold text-on-surface">Session alerts</h2>
-        <div className="border border-outline-variant bg-surface-container-lowest p-6 text-center">
+      <section className="mb-12">
+        <div className="mb-6 flex items-center">
+          <h2 className="shrink-0 font-serif text-2xl font-semibold italic text-on-surface">Session alerts</h2>
+          <div className="ml-8 h-px flex-1 bg-outline-variant" />
+        </div>
+        <div className="border border-outline-variant p-6 text-center">
           <XCircle className="mx-auto mb-3 h-8 w-8 text-error" />
           <p className="text-on-surface-variant">{`Failed to reach /api/snapshot.`}</p>
           <p className="mt-1 text-sm text-on-surface-variant">Retrying automatically every {POLL_INTERVAL_MS / 1000}s.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-4 border border-on-surface px-3 py-2 text-xs font-bold uppercase tracking-[0.05em] text-on-surface transition-colors duration-100 hover:bg-on-surface hover:text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Retry now
+          </button>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="border-b border-outline-variant py-8">
-      <h2 className="mb-4 font-serif text-2xl font-semibold text-on-surface">Session alerts</h2>
-      {alerts.length === 0 ? (
-        <div className="border border-outline-variant bg-surface-container-lowest p-6">
-          <div className="flex items-center text-on-surface-variant">
-            <Circle className="mr-2 h-4 w-4" />
-            <span>No alerts generated this session.</span>
+    <section className="mb-12">
+      <div className="mb-6 flex items-center">
+        <h2 className="shrink-0 font-serif text-2xl font-semibold italic text-on-surface">Session alerts</h2>
+        <div className="ml-8 h-px flex-1 bg-outline-variant" />
+      </div>
+      <div className="overflow-x-auto">
+        <div className="font-mono text-sm md:min-h-[198px] md:min-w-[680px]">
+          <div className="grid grid-cols-[72px_120px_82px_1fr] border-b border-outline-variant py-2 uppercase tracking-[0.04em] text-on-surface-variant md:grid-cols-[100px_150px_120px_1fr]">
+            <span>Time</span>
+            <span>Match</span>
+            <span>Gap</span>
+            <span className="hidden md:block">Summary</span>
           </div>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {alerts.map((entry) => (
-            <div
-              key={entry.id}
-              className="flex flex-col gap-3 border border-outline-variant bg-surface-container-lowest p-4 md:flex-row md:items-center"
-            >
-              <span className="shrink-0 font-mono text-sm text-on-surface-variant">
-                {new Date(entry.timestamp).toLocaleTimeString("en-US", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                UTC
-              </span>
-              <span className="shrink-0 font-bold text-on-surface">{entry.match}</span>
-              <span className="shrink-0 font-mono font-bold text-primary">
-                {formatPp(entry.gapValue)}
-              </span>
-              <span className="text-on-surface-variant">{entry.explanation}</span>
+          {alerts.length === 0 ? (
+            <div className="grid grid-cols-[100px_1fr] border-b border-outline-variant py-4 text-on-surface-variant">
+              <Circle className="h-4 w-4 self-center" aria-hidden="true" />
+              <span>No alerts generated this session.</span>
             </div>
-          ))}
+          ) : (
+            alerts.map((entry) => (
+              <div
+                key={entry.id}
+                className="grid grid-cols-[72px_120px_82px_1fr] border-b border-outline-variant py-4 text-on-surface md:grid-cols-[100px_150px_120px_1fr]"
+              >
+                <span className="text-on-surface-variant">
+                  {new Date(entry.timestamp).toLocaleTimeString("en-US", {
+                    hour12: false,
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                <span className="font-bold">{entry.match}</span>
+                <span className="font-bold text-primary">{formatPp(entry.gapValue)}</span>
+                <span className="hidden text-on-surface-variant md:block">{entry.explanation}</span>
+              </div>
+            ))
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 }
 
 function Footer() {
   return (
-    <footer className="mt-8 border-t border-outline-variant bg-surface-container-low">
-      <div className="mx-auto w-full max-w-[1280px] px-4 py-8 md:px-12">
-        <div className="text-xs font-bold uppercase tracking-widest text-on-surface mb-3">
-          World Cup Edge
+    <footer className="border-t border-outline-variant bg-transparent">
+      <div className="mx-auto w-full max-w-[1280px] px-4 py-3 md:px-8">
+        <div className="mb-2 font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface">
+          Read-only monitoring interface
         </div>
-        <p className="max-w-2xl text-sm leading-relaxed text-on-surface-variant mb-3">
+        <p className="mb-2 max-w-2xl text-xs leading-relaxed text-on-surface-variant">
           {DISCLAIMER_LINES.line1}
         </p>
-        <p className="max-w-2xl text-sm leading-relaxed text-on-surface-variant">
+        <p className="max-w-2xl text-xs leading-relaxed text-on-surface-variant">
           {DISCLAIMER_LINES.line2}
         </p>
       </div>

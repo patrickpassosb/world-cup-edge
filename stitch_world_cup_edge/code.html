@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WORLD CUP EDGE | England vs Argentina</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;family=Source+Sans+3:ital,wght@0,200..900;1,200..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#e5e2e1",
+                    "surface-dim": "#d8dade",
+                    "on-tertiary-fixed-variant": "#474743",
+                    "surface-container-highest": "#e0e2e6",
+                    "tertiary": "#060605",
+                    "on-surface": "#191c1f",
+                    "secondary-container": "#708cfd",
+                    "outline": "#747878",
+                    "on-surface-variant": "#444748",
+                    "primary": "#060607",
+                    "surface-container": "#eceef2",
+                    "on-primary-fixed": "#1b1b1c",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e0e2e6",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#c4c7c7",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#eff1f5",
+                    "surface": "#FAF7F2",
+                    "inverse-surface": "#2d3134",
+                    "surface-bright": "#FAF7F2",
+                    "on-primary-fixed-variant": "#474746",
+                    "on-background": "#1F1F1F",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed": "#e5e2dd",
+                    "surface-tint": "#5f5e5e",
+                    "secondary": "#1E40AF",
+                    "tertiary-container": "#1f1f1f",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#dde1ff",
+                    "on-secondary-fixed": "#001453",
+                    "surface-container-low": "#f2f4f8",
+                    "on-error": "#ffffff",
+                    "secondary-fixed-dim": "#b8c4ff",
+                    "on-primary-container": "#888686",
+                    "primary-fixed-dim": "#c8c6c5",
+                    "surface-container-high": "#e6e8ec",
+                    "on-tertiary": "#ffffff",
+                    "primary-container": "#1f1f1f",
+                    "on-secondary-fixed-variant": "#173bab",
+                    "inverse-primary": "#c8c6c5",
+                    "on-tertiary-container": "#888682",
+                    "on-tertiary-fixed": "#1c1c19",
+                    "tertiary-fixed-dim": "#c8c6c2",
+                    "background": "#FAF7F2",
+                    "on-secondary-container": "#00217a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "0px"
+            },
+            "spacing": {
+                    "margin-edge": "32px",
+                    "baseline": "4px",
+                    "column-gap": "16px",
+                    "gutter": "24px",
+                    "row-padding": "12px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Source Serif 4"],
+                    "label-caps": ["Source Sans 3"],
+                    "display-lg-mobile": ["Source Serif 4"],
+                    "body-main": ["Source Sans 3"],
+                    "headline-md": ["Source Serif 4"],
+                    "data-tabular": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "display-lg-mobile": ["30px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-main": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "data-tabular": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Source Sans 3', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 18px;
+        }
+        .active-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 0%; /* Rectangular dots as per 0px rule */
+            background-color: #1E40AF;
+            display: inline-block;
+            margin-right: 4px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        .border-hairline { border-width: 0.5px; }
+    </style>
+</head>
+<body class="bg-surface text-on-background min-h-screen flex flex-col items-center">
+<!-- Top Navigation Anchor (Manual Implementation) -->
+<header class="w-full max-w-[1280px] px-margin-edge py-row-padding flex justify-between items-center border-b-2 border-primary">
+<div class="font-display-lg text-display-lg tracking-tighter text-primary">WORLD CUP EDGE</div>
+<div class="flex items-center space-x-gutter">
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined">sensors</span>
+                LIVE FEED ACTIVE
+            </span>
+<div class="flex gap-4">
+<span class="material-symbols-outlined cursor-pointer hover:bg-primary hover:text-on-primary transition-colors p-1">filter_list</span>
+<span class="material-symbols-outlined cursor-pointer hover:bg-primary hover:text-on-primary transition-colors p-1">refresh</span>
+<span class="material-symbols-outlined cursor-pointer hover:bg-primary hover:text-on-primary transition-colors p-1">settings</span>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="w-full max-w-[1280px] px-margin-edge py-8 flex-grow">
+<!-- Match Identity Block -->
+<section class="mb-12">
+<div class="flex justify-between items-end border-b border-outline-variant pb-baseline">
+<div>
+<h1 class="font-display-lg text-display-lg text-primary">England vs Argentina</h1>
+<p class="font-body-main text-on-surface-variant italic">July 15, 2026 · 19:00 UTC · Regulation time (1X2)</p>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-label-caps text-on-surface-variant">NEXT EVENT START</p>
+<p class="font-data-tabular text-headline-md tracking-tight">Kickoff in <span id="countdown">02:14:33</span></p>
+</div>
+</div>
+</section>
+<!-- Focal Point: Gross Consensus Gap -->
+<section class="text-center py-16 border-b border-outline-variant">
+<div class="inline-block">
+<h2 class="font-data-tabular text-[96px] leading-none font-bold text-secondary mb-2">+4.2 pp</h2>
+<p class="font-label-caps text-label-caps tracking-[0.2em] text-primary mb-4">GROSS CONSENSUS GAP — ENGLAND TO WIN IN REGULATION</p>
+<div class="max-w-xl mx-auto border-t border-primary pt-4">
+<p class="font-body-main text-on-surface">
+                        TxLINE's consensus probability is 4.2 percentage points higher than Polymarket's best ask for the same outcome.
+                    </p>
+</div>
+</div>
+</section>
+<!-- Dual Column Comparison -->
+<section class="grid grid-cols-2 divide-x divide-outline-variant min-h-[400px]">
+<!-- LEFT COLUMN: TxLINE -->
+<div class="pr-gutter py-12">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant">TXLINE CONSENSUS</h3>
+<div class="flex items-center font-label-caps text-label-caps text-secondary">
+<span class="active-dot"></span>
+                        LIVE · 11S AGO
+                    </div>
+</div>
+<div class="mb-12">
+<span class="font-data-tabular text-[64px] leading-none text-primary">54.8%</span>
+<p class="font-body-main text-on-surface-variant mt-2">England to win (regulation time)</p>
+</div>
+<div class="space-y-4 border-t border-outline-variant pt-8">
+<div class="flex justify-between font-data-tabular text-data-tabular">
+<span class="text-on-surface-variant">TEAMS MATCHED</span>
+<span class="text-primary font-bold">✓</span>
+</div>
+<div class="flex justify-between font-data-tabular text-data-tabular">
+<span class="text-on-surface-variant">DATE MATCHED</span>
+<span class="text-primary font-bold">✓</span>
+</div>
+<div class="flex justify-between font-data-tabular text-data-tabular">
+<span class="text-on-surface-variant">RULES: REGULATION-TIME 1X2</span>
+<span class="text-primary font-bold">✓</span>
+</div>
+<div class="flex justify-between font-data-tabular text-data-tabular">
+<span class="text-on-surface-variant">MARKET STATE: OPEN</span>
+<span class="text-primary font-bold">✓</span>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Polymarket -->
+<div class="pl-gutter py-12">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant">POLYMARKET TOP-OF-BOOK QUOTE</h3>
+<div class="flex items-center font-label-caps text-label-caps text-secondary">
+<span class="active-dot"></span>
+                        LIVE · 4S AGO
+                    </div>
+</div>
+<div class="mb-12">
+<div class="flex items-baseline gap-2">
+<span class="font-data-tabular text-[64px] leading-none text-primary">50.6%</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant border border-on-surface-variant px-1">BEST ASK</span>
+</div>
+<p class="font-body-main text-on-surface-variant mt-2">England YES · top-of-book quote</p>
+</div>
+<div class="mt-auto pt-16 flex flex-col items-end">
+<div class="text-right">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">GAP AFTER FEE</p>
+<p class="font-data-tabular text-headline-md text-secondary">+3.7 pp</p>
+</div>
+<div class="w-full mt-8 opacity-20 h-48 overflow-hidden pointer-events-none">
+<!-- Symbolic Visualization of Orderbook Depth -->
+<div class="flex items-end h-full gap-1">
+<div class="bg-primary w-full h-[20%]"></div>
+<div class="bg-primary w-full h-[35%]"></div>
+<div class="bg-primary w-full h-[30%]"></div>
+<div class="bg-primary w-full h-[45%]"></div>
+<div class="bg-primary w-full h-[60%]"></div>
+<div class="bg-primary w-full h-[55%]"></div>
+<div class="bg-primary w-full h-[70%]"></div>
+<div class="bg-primary w-full h-[65%]"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Status Badges Row -->
+<section class="py-12 border-t border-b border-primary mb-12">
+<div class="flex flex-wrap gap-8 justify-center">
+<div class="flex items-center gap-2 opacity-30">
+<span class="material-symbols-outlined">sync</span>
+<span class="font-label-caps text-label-caps">LOADING</span>
+</div>
+<div class="flex items-center gap-2 border-b-2 border-secondary pb-1">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">sensors</span>
+<span class="font-label-caps text-label-caps text-secondary">LIVE</span>
+</div>
+<div class="flex items-center gap-2 opacity-30">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-caps text-label-caps">STALE</span>
+</div>
+<div class="flex items-center gap-2 border-b-2 border-secondary pb-1">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-caps text-label-caps text-secondary">NO ALERT</span>
+</div>
+<div class="flex items-center gap-2 opacity-30">
+<span class="material-symbols-outlined">warning</span>
+<span class="font-label-caps text-label-caps">ALERT</span>
+</div>
+<div class="flex items-center gap-2 opacity-30">
+<span class="material-symbols-outlined">block</span>
+<span class="font-label-caps text-label-caps">UNAVAILABLE</span>
+</div>
+<div class="flex items-center gap-2 opacity-30">
+<span class="material-symbols-outlined">error</span>
+<span class="font-label-caps text-label-caps">ERROR</span>
+</div>
+</div>
+</section>
+<!-- Session Alert History -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-display-lg text-headline-md italic">Session alerts</h2>
+<div class="h-px bg-outline-variant flex-grow ml-8"></div>
+</div>
+<div class="font-data-tabular text-data-tabular">
+<!-- Header row -->
+<div class="grid grid-cols-[100px_150px_120px_1fr] py-2 text-on-surface-variant border-b border-outline-variant">
+<div>TIME</div>
+<div>MATCH</div>
+<div>GAP</div>
+<div>SUMMARY</div>
+</div>
+<!-- Alert row -->
+<div class="grid grid-cols-[100px_150px_120px_1fr] py-4 border-b border-outline-variant hover:bg-surface-container-low transition-colors group">
+<div class="text-on-surface-variant">14:02</div>
+<div class="font-bold">Eng vs Arg</div>
+<div class="text-secondary font-bold">+4.2 pp</div>
+<div class="flex justify-between items-center pr-4">
+<span>TxLINE consensus sits above Polymarket's best ask. Not an arbitrage guarantee.</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+</div>
+</div>
+<!-- Placeholder row for density -->
+<div class="grid grid-cols-[100px_150px_120px_1fr] py-4 border-b border-outline-variant opacity-40">
+<div class="text-on-surface-variant">13:58</div>
+<div class="">Esp vs Ger</div>
+<div class="">+1.1 pp</div>
+<div class="">Baseline monitoring active. No divergence exceeding 2.0pp threshold detected.</div>
+</div>
+<!-- Placeholder row for density -->
+<div class="grid grid-cols-[100px_150px_120px_1fr] py-4 border-b border-outline-variant opacity-40">
+<div class="text-on-surface-variant">13:45</div>
+<div class="">Fra vs Bra</div>
+<div class="">-0.4 pp</div>
+<div class="">Negative gap detected (Polymarket &gt; TxLINE). Threshold not met for directional alert.</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full max-w-[1280px] px-margin-edge py-row-padding border-t border-outline-variant">
+<div class="flex flex-col md:flex-row justify-between gap-4 text-on-surface-variant">
+<div class="max-w-2xl">
+<p class="font-label-caps text-label-caps mb-2">READ-ONLY MONITORING INTERFACE</p>
+<p class="font-body-main text-xs leading-relaxed">
+                    World Cup Edge is a high-performance consensus monitoring tool. All data is provided for analytical purposes only. This interface does not facilitate wagering, financial transactions, or custodial services. Data provenance: TxLINE Proprietary Algorithm &amp; Polymarket Public API.
+                </p>
+</div>
+<div class="text-right flex flex-col justify-end">
+<p class="font-data-tabular text-xs">BUILD: 1.0.4-STABLE</p>
+<p class="font-data-tabular text-xs">LATENCY: 42MS</p>
+</div>
+</div>
+</footer>
+<!-- Interactive Layer: Countdown Script -->
+<script>
+        function updateCountdown() {
+            const countdownEl = document.getElementById('countdown');
+            let parts = countdownEl.innerText.split(':');
+            let h = parseInt(parts[0]);
+            let m = parseInt(parts[1]);
+            let s = parseInt(parts[2]);
+
+            s--;
+            if (s < 0) {
+                s = 59;
+                m--;
+                if (m < 0) {
+                    m = 59;
+                    h--;
+                }
+            }
+
+            countdownEl.innerText = 
+                String(h).padStart(2, '0') + ':' + 
+                String(m).padStart(2, '0') + ':' + 
+                String(s).padStart(2, '0');
+        }
+        setInterval(updateCountdown, 1000);
+    </script>
+</body></html>

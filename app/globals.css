@@ -14,6 +14,7 @@
 
   --color-outline: #747878;
   --color-outline-variant: #e5e7eb;
+  --color-state-muted: #6c6f70;
 
   --color-primary: #1e40af;
   --color-on-primary: #ffffff;
@@ -54,10 +55,25 @@ body {
   color: var(--foreground);
 }
 
+*,
+::before,
+::after {
+  border-radius: 0;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
 .hairline {
   border-color: var(--color-outline-variant);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
