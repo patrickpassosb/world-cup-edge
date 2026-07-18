@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.env.local
+.env.*.local
+keypair.json
+*.pem
+*.key
+design/stitch/generated/
+tests
+docs
+*.md
+.gitignore
+docker-compose.yml
+Dockerfile
+.dockerignore
