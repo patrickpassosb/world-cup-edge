@@ -7,14 +7,14 @@ describe("MockDataProvider live scenario", () => {
     const snapshot = await provider.getSnapshot();
 
     expect(snapshot.status).toBe("live");
-    expect(snapshot.match.name).toBe("England vs France");
-    expect(snapshot.match.date).toBe("2026-07-16");
-    expect(snapshot.match.kickoffUTC).toBe("2026-07-16T19:00:00Z");
+    expect(snapshot.match.name).toBe("England vs Argentina");
+    expect(snapshot.match.date).toBe("2026-07-15");
+    expect(snapshot.match.kickoffUTC).toBe("2026-07-15T19:00:00Z");
     expect(snapshot.match.rules).toBe("regulation-time 1X2");
     expect(snapshot.match.outcome).toBe("home");
     expect(snapshot.match.outcomeLabel).toBe("England");
     expect(snapshot.match.homeTeam).toBe("England");
-    expect(snapshot.match.awayTeam).toBe("France");
+    expect(snapshot.match.awayTeam).toBe("Argentina");
 
     expect(snapshot.txline.probability).not.toBeNull();
     expect(typeof snapshot.txline.probability).toBe("number");
@@ -46,7 +46,7 @@ describe("MockDataProvider live scenario", () => {
     const provider = new MockDataProvider("live", "away");
     const snapshot = await provider.getSnapshot();
     expect(snapshot.match.outcome).toBe("away");
-    expect(snapshot.match.outcomeLabel).toBe("France");
+    expect(snapshot.match.outcomeLabel).toBe("Argentina");
   });
 
   it("supports outcome switching to draw", async () => {
@@ -64,7 +64,7 @@ describe("MockDataProvider live scenario", () => {
     provider.setOutcome("away");
     snapshot = await provider.getSnapshot();
     expect(snapshot.match.outcome).toBe("away");
-    expect(snapshot.match.outcomeLabel).toBe("France");
+    expect(snapshot.match.outcomeLabel).toBe("Argentina");
   });
 });
 

@@ -86,3 +86,46 @@ describe("createProvider backward compat (mock)", () => {
     expect(provider).toBeInstanceOf(MockDataProvider);
   });
 });
+
+describe("createProvider with all 3 polymarket slugs (BUG-2)", () => {
+  beforeEach(() => {
+    vi.stubEnv("DATA_SOURCE", "real");
+    clearProviderCache();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    clearProviderCache();
+  });
+
+  it("passes drawMarketSlug, awayMarketSlug, and eventSlug to RealDataProvider", () => {
+    const provider = createProvider({
+      fixtureId: 18257865,
+      homeMarketSlug: "fifwc-fra-eng-2026-07-18-fra",
+      drawMarketSlug: "fifwc-fra-eng-2026-07-18-draw",
+      awayMarketSlug: "fifwc-fra-eng-2026-07-18-eng",
+      eventSlug: "fifwc-fra-eng-2026-07-18",
+      outcome: "away",
+      homeTeam: "France",
+      awayTeam: "England",
+      kickoffISO: "2026-07-18T21:00:00.000Z",
+    });
+    expect(provider).toBeInstanceOf(RealDataProvider);
+  });
+
+  it("returns different instances when slugs differ even with same fixtureId", () => {
+    const a = createProvider({
+      fixtureId: 1,
+      homeMarketSlug: "slug-a",
+      drawMarketSlug: "draw-a",
+      eventSlug: "event-a",
+    });
+    const b = createProvider({
+      fixtureId: 1,
+      homeMarketSlug: "slug-a",
+      drawMarketSlug: "draw-b",
+      eventSlug: "event-b",
+    });
+    expect(a).not.toBe(b);
+  });
+});

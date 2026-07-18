@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import {
   AlertTriangle,
   Circle,
@@ -8,6 +8,7 @@ import {
   WifiOff,
   XCircle,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { DISCLAIMER_LINES, MATCH } from "@/lib/config";
 import type { MatchEntry, Outcome, SessionAlert, Snapshot } from "@/lib/types";
 
@@ -236,6 +237,14 @@ function OutcomePickerSection({ selectedMatch, outcome, onSelect }: OutcomePicke
 }
 
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [countdown, setCountdown] = useState<string>(formatCountdown(MATCH.kickoffUTC));
   const [sessionAlerts, setSessionAlerts] = useState<SessionAlert[]>([]);
@@ -246,7 +255,8 @@ export default function DashboardPage() {
   const [outcome, setOutcome] = useState<Outcome>("home");
   const lastDedupeKeyRef = useRef<string | null>(null);
 
-  const isReplay = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "replay";
+  const searchParams = useSearchParams();
+  const isReplay = searchParams?.get("demo") === "replay";
 
   const selectedFixtureId = selectedMatch?.fixtureId ?? null;
   const txlineOnly = selectedMatch !== null && !selectedMatch.hasPolymarketMarket;
@@ -305,6 +315,9 @@ export default function DashboardPage() {
         const params = new URLSearchParams();
         params.set("fixtureId", String(selectedMatch.fixtureId));
         if (marketSlug) params.set("marketSlug", marketSlug);
+        if (selectedMatch.polymarketDrawMarketSlug) params.set("drawMarketSlug", selectedMatch.polymarketDrawMarketSlug);
+        if (selectedMatch.polymarketAwayMarketSlug) params.set("awayMarketSlug", selectedMatch.polymarketAwayMarketSlug);
+        if (selectedMatch.polymarketEventSlug) params.set("eventSlug", selectedMatch.polymarketEventSlug);
         params.set("outcome", outcome);
         params.set("homeTeam", selectedMatch.homeTeam);
         params.set("awayTeam", selectedMatch.awayTeam);

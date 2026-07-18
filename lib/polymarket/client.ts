@@ -1,4 +1,3 @@
-import { CONFIG } from "@/lib/config";
 import type { ClobBook, GammaEvent, GammaMarket } from "@/lib/polymarket/types";
 
 const GAMMA_BASE = "https://gamma-api.polymarket.com";
@@ -36,7 +35,7 @@ export async function fetchMarket(slug: string): Promise<GammaMarket | null> {
   if (Array.isArray(markets) && markets.length > 0) {
     return markets[0] ?? null;
   }
-  const eventSlug = slug.replace(/-eng$|-draw$|-arg$/, "");
+  const eventSlug = slug.replace(/-[a-z]{3}$/, "");
   const event = await fetchEvent(eventSlug);
   if (event && event.markets && event.markets.length > 0) {
     const match = event.markets.find((m) => m.slug === slug);
@@ -67,8 +66,8 @@ export interface PolymarketFetchResult {
 }
 
 export async function fetchPolymarketData(
-  eventSlug: string = CONFIG.polymarket.eventSlug,
-  marketSlug: string = CONFIG.polymarket.marketSlug,
+  eventSlug: string,
+  marketSlug: string,
 ): Promise<PolymarketFetchResult> {
   const [event, market] = await Promise.all([
     fetchEvent(eventSlug),
@@ -81,12 +80,10 @@ export async function fetchPolymarketData(
       const tokens: string[] = JSON.parse(market.clobTokenIds);
       const labels: string[] = market.outcomes ? JSON.parse(market.outcomes) : [];
       const yesIdx = labels.findIndex(
-        (l) => l.toLowerCase() === "yes",
+        (l) => l.toLowerCase() === "yes" || l.toLowerCase() === "true",
       );
       if (yesIdx >= 0 && tokens[yesIdx]) {
         yesTokenId = tokens[yesIdx];
-      } else if (tokens[0]) {
-        yesTokenId = tokens[0];
       }
     } catch {
       yesTokenId = null;

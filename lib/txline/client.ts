@@ -61,7 +61,7 @@ function normalizeFixtureFields(raw: unknown): Fixture {
     participant1: String(r.participant1 ?? r.Participant1 ?? ""),
     participant2: String(r.participant2 ?? r.Participant2 ?? ""),
     participant1IsHome: Boolean(r.participant1IsHome ?? r.Participant1IsHome ?? false),
-    startTime: String(r.startTime ?? r.StartTime ?? ""),
+    startTime: Number(r.startTime ?? r.StartTime ?? 0),
     gameState: Number(r.gameState ?? r.GameState ?? 0),
     competition: String(r.competition ?? r.Competition ?? ""),
     competitionId: Number(r.competitionId ?? r.CompetitionId ?? 0),
@@ -94,6 +94,9 @@ function normalizeOddsFields(raw: unknown): OddsPayload {
     priceNames: (r.priceNames ?? r.PriceNames ?? []) as string[],
     prices: (r.prices ?? r.Prices ?? []) as string[],
     pct: (r.pct ?? r.Pct ?? []) as string[],
+    serviceLevel: typeof (r.serviceLevel ?? r.ServiceLevel) === "number"
+      ? Number(r.serviceLevel ?? r.ServiceLevel)
+      : undefined,
   };
 }
 

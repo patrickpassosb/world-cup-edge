@@ -15,7 +15,13 @@ npm run dev
 
 ## TxLINE activation
 
-See `docs/txline-activation.md` for the full mainnet service-level-12 activation flow.
+Run `npm run txline:activate` (CLI) or visit `/activate` in the browser after `npm run dev`.
+
+Requires a mainnet Solana wallet with a small SOL balance for the on-chain subscription transaction. The activation flow:
+1. Connects your wallet (Phantom or Solflare)
+2. Submits a `subscribe(12, 4)` transaction to the Txoracle program (service level 12 = real-time, 4 weeks)
+3. Signs the activation message
+4. Returns a JWT and API token to copy into `.env.local`
 
 ## Architecture
 

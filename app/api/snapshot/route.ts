@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createProvider } from "@/lib/data";
 import { MockDataProvider } from "@/lib/data/mock-provider";
 import { isReplayMode } from "@/lib/data/replay";
+import { CONFIG } from "@/lib/config";
 import type { Outcome, Snapshot } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,9 @@ export async function GET(request: Request) {
 
   const fixtureIdRaw = searchParams.get("fixtureId");
   const marketSlugRaw = searchParams.get("marketSlug");
+  const drawMarketSlugRaw = searchParams.get("drawMarketSlug");
+  const awayMarketSlugRaw = searchParams.get("awayMarketSlug");
+  const eventSlugRaw = searchParams.get("eventSlug");
   const outcomeRaw = searchParams.get("outcome");
   const homeTeamRaw = searchParams.get("homeTeam");
   const awayTeamRaw = searchParams.get("awayTeam");
@@ -41,6 +45,9 @@ export async function GET(request: Request) {
 
   const fixtureId = fixtureIdRaw !== null ? Number(fixtureIdRaw) : undefined;
   const marketSlug = marketSlugRaw !== null && marketSlugRaw !== "" ? marketSlugRaw : undefined;
+  const drawMarketSlug = drawMarketSlugRaw !== null && drawMarketSlugRaw !== "" ? drawMarketSlugRaw : undefined;
+  const awayMarketSlug = awayMarketSlugRaw !== null && awayMarketSlugRaw !== "" ? awayMarketSlugRaw : undefined;
+  const eventSlug = eventSlugRaw !== null && eventSlugRaw !== "" ? eventSlugRaw : undefined;
   const outcome = parseOutcome(outcomeRaw);
   const homeTeam = homeTeamRaw !== null && homeTeamRaw !== "" ? homeTeamRaw : undefined;
   const awayTeam = awayTeamRaw !== null && awayTeamRaw !== "" ? awayTeamRaw : undefined;
@@ -49,6 +56,9 @@ export async function GET(request: Request) {
   const provider = createProvider({
     fixtureId: Number.isFinite(fixtureId) ? (fixtureId as number) : undefined,
     homeMarketSlug: marketSlug,
+    drawMarketSlug,
+    awayMarketSlug,
+    eventSlug,
     outcome,
     homeTeam,
     awayTeam,
@@ -63,18 +73,24 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
+    const home = homeTeam ?? "Unknown";
+    const away = awayTeam ?? "Unknown";
+    const outcomeLabel = outcome === "draw" ? "Draw" : outcome === "away" ? away : home;
+    const kickoff = kickoffISO ?? "";
+    const date = kickoff ? kickoff.slice(0, 10) : "";
+
     const fallback: Snapshot = {
       status: "error",
       alertKind: "no-alert",
       match: {
-        name: "England vs Argentina",
-        date: "2026-07-15",
-        kickoffUTC: "2026-07-15T19:00:00Z",
+        name: `${home} vs ${away}`,
+        date,
+        kickoffUTC: kickoff,
         rules: "regulation-time 1X2",
-        outcome: "home",
-        outcomeLabel: "England",
-        homeTeam: "England",
-        awayTeam: "Argentina",
+        outcome: outcome ?? "home",
+        outcomeLabel,
+        homeTeam: home,
+        awayTeam: away,
       },
       txline: {
         probability: null,
@@ -82,7 +98,7 @@ export async function GET(request: Request) {
         timestamp: null,
         receivedAt: null,
         fresh: false,
-        serviceLevel: 12,
+        serviceLevel: CONFIG.txline.serviceLevel,
         delayed: false,
       },
       polymarket: {
@@ -104,7 +120,7 @@ export async function GET(request: Request) {
         grossGap: null,
         feePerShare: null,
         gapAfterFee: null,
-        threshold: 0.05,
+        threshold: CONFIG.gap.threshold,
       },
       alert: {
         active: false,

@@ -9,7 +9,9 @@ import {
   selectRegulationTimeRow,
   extractTeams,
   extractFixtureDate,
+  normalizeTxline,
 } from "@/lib/txline/normalize";
+import { CONFIG } from "@/lib/config";
 import type { Fixture, OddsPayload } from "@/lib/txline/types";
 
 function makeOdds(overrides: Partial<OddsPayload> = {}): OddsPayload {
@@ -37,7 +39,7 @@ function makeFixture(overrides: Partial<Fixture> = {}): Fixture {
     participant1: "England",
     participant2: "Argentina",
     participant1IsHome: true,
-    startTime: "2026-07-15T19:00:00Z",
+    startTime: 1784142000000,
     gameState: 1,
     competition: "World Cup",
     competitionId: 500001,
@@ -266,5 +268,71 @@ describe("extractFixtureDate", () => {
 
   it("returns null for null fixture", () => {
     expect(extractFixtureDate(null)).toBeNull();
+  });
+
+  it("returns null for invalid timestamp (0)", () => {
+    const fixture = makeFixture({ startTime: 0 });
+    expect(extractFixtureDate(fixture)).toBeNull();
+  });
+
+  it("returns null for NaN timestamp", () => {
+    const fixture = makeFixture({ startTime: NaN });
+    expect(extractFixtureDate(fixture)).toBeNull();
+  });
+});
+
+describe("normalizeTxline", () => {
+  it("does not accept a serviceLevel parameter (outcome is the 4th param, not 5th)", () => {
+    const result = normalizeTxline(null, [], Date.now(), "away");
+    expect(result.probability).toBeNull();
+    expect(result.marketType).toBeNull();
+  });
+
+  it("reads serviceLevel from CONFIG fallback when API does not report one", () => {
+    const result = normalizeTxline(null, [], Date.now(), "home");
+    expect(result.serviceLevel).toBe(CONFIG.txline.serviceLevel);
+    expect(result.delayed).toBe(false);
+  });
+
+  it("reads serviceLevel from the odds row when the API reports one", () => {
+    const odds: OddsPayload[] = [{
+      ...makeOdds({
+        superOddsType: "1X2_PARTICIPANT_RESULT",
+        marketPeriod: null,
+        priceNames: ["part1", "draw", "part2"],
+        pct: ["52.000", "28.000", "20.000"],
+      }),
+      serviceLevel: 1,
+    }];
+    const result = normalizeTxline(null, odds, Date.now(), "home");
+    expect(result.serviceLevel).toBe(1);
+    expect(result.delayed).toBe(true);
+  });
+
+  it("rejects odds with implausible distribution (sum != 1.0)", () => {
+    const badOdds: OddsPayload[] = [{
+      ...makeOdds({
+        superOddsType: "1X2_PARTICIPANT_RESULT",
+        marketPeriod: null,
+        priceNames: ["part1", "draw", "part2"],
+        pct: ["10.000", "10.000", "10.000"],
+      }),
+    }];
+    const result = normalizeTxline(null, badOdds, Date.now(), "home");
+    expect(result.probability).toBeNull();
+  });
+
+  it("accepts odds with plausible distribution (sum ~= 1.0)", () => {
+    const goodOdds: OddsPayload[] = [{
+      ...makeOdds({
+        superOddsType: "1X2_PARTICIPANT_RESULT",
+        marketPeriod: null,
+        priceNames: ["part1", "draw", "part2"],
+        pct: ["52.000", "28.000", "20.000"],
+      }),
+    }];
+    const result = normalizeTxline(null, goodOdds, Date.now(), "home");
+    expect(result.probability).not.toBeNull();
+    expect(result.probability).toBeCloseTo(0.52, 5);
   });
 });
