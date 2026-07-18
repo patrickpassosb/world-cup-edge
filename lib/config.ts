@@ -1,6 +1,6 @@
 export const CONFIG = {
   txline: {
-    fixtureId: 18241006,
+    fixtureId: 18257865,
     network: "mainnet" as const,
     serviceLevel: 12,
     maxAgeMs: 30_000,
@@ -22,10 +22,10 @@ export const CONFIG = {
 
 export const MATCH = {
   homeTeam: "England",
-  awayTeam: "Argentina",
-  matchName: "England vs Argentina",
-  matchDate: "2026-07-15",
-  kickoffUTC: "2026-07-15T19:00:00Z",
+  awayTeam: "France",
+  matchName: "England vs France",
+  matchDate: "2026-07-16",
+  kickoffUTC: "2026-07-16T19:00:00Z",
   rules: "regulation-time 1X2",
 };
 

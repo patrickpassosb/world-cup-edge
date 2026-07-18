@@ -3,13 +3,13 @@ import { checkEquivalence } from "@/lib/contract/equivalence";
 
 const VALID_INPUT = {
   txlineHomeTeam: "England",
-  txlineAwayTeam: "Argentina",
-  txlineMatchDate: "2026-07-15",
+  txlineAwayTeam: "France",
+  txlineMatchDate: "2026-07-16",
   txlineMarketType: "1X2",
   txlineMarketPeriod: "regulation",
   polymarketHomeTeam: "England",
-  polymarketAwayTeam: "Argentina",
-  polymarketMatchDate: "2026-07-15",
+  polymarketAwayTeam: "France",
+  polymarketMatchDate: "2026-07-16",
   polymarketResolutionWording: "England to win in the first 90 minutes plus stoppage time (excludes extra time)",
   selectedTokenLabel: "England YES",
   marketActive: true,
@@ -44,7 +44,7 @@ describe("checkEquivalence team matching", () => {
     const result = checkEquivalence({
       ...VALID_INPUT,
       txlineHomeTeam: "england",
-      polymarketAwayTeam: "ARGENTINA",
+      polymarketAwayTeam: "FRANCE",
     });
     expect(result.checks.teams).toBe(true);
   });

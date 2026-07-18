@@ -7,9 +7,9 @@ describe("MockDataProvider live scenario", () => {
     const snapshot = await provider.getSnapshot();
 
     expect(snapshot.status).toBe("live");
-    expect(snapshot.match.name).toBe("England vs Argentina");
-    expect(snapshot.match.date).toBe("2026-07-15");
-    expect(snapshot.match.kickoffUTC).toBe("2026-07-15T19:00:00Z");
+    expect(snapshot.match.name).toBe("England vs France");
+    expect(snapshot.match.date).toBe("2026-07-16");
+    expect(snapshot.match.kickoffUTC).toBe("2026-07-16T19:00:00Z");
     expect(snapshot.match.rules).toBe("regulation-time 1X2");
 
     expect(snapshot.txline.probability).not.toBeNull();

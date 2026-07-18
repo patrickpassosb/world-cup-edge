@@ -1,16 +1,16 @@
 import type { DataProvider } from "@/lib/data/provider";
 import { MockDataProvider, type MockScenario } from "@/lib/data/mock-provider";
-import { TxLineDataProvider } from "@/lib/data/txline-provider";
+import { RealDataProvider } from "@/lib/data/real-provider";
 
 export function createProvider(): DataProvider {
   const source = process.env.DATA_SOURCE;
 
-  if (source === "txline") {
-    return new TxLineDataProvider() as unknown as DataProvider;
+  if (source === "txline" || source === "real") {
+    return new RealDataProvider();
   }
 
   const scenario = (process.env.MOCK_SCENARIO ?? "live") as MockScenario;
   return new MockDataProvider(scenario);
 }
 
-export { MockDataProvider, TxLineDataProvider };
+export { MockDataProvider, RealDataProvider };
