@@ -148,7 +148,7 @@ export class RealDataProvider implements DataProvider {
     );
 
     const polyData = polyErrored ? null : (polyResult as PolymarketFetchResult);
-    const poly = polyData ?? { event: null, market: null, book: null, yesTokenId: null };
+    const poly = polyData ?? { event: null, market: null, book: null, yesTokenId: null, clobInfo: null };
 
     const normalizedPoly = normalizePolymarket(
       poly.event,
@@ -156,6 +156,7 @@ export class RealDataProvider implements DataProvider {
       poly.book,
       poly.yesTokenId,
       now,
+      poly.clobInfo,
     );
 
     const matchMeta = this.buildMatchMetadata(txlineData.fixture);

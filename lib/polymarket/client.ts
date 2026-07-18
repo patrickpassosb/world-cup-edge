@@ -1,4 +1,4 @@
-import type { ClobBook, GammaEvent, GammaMarket } from "@/lib/polymarket/types";
+import type { ClobBook, ClobFeeDetails, ClobMarketInfo, GammaEvent, GammaMarket } from "@/lib/polymarket/types";
 
 const GAMMA_BASE = "https://gamma-api.polymarket.com";
 const CLOB_BASE = "https://clob.polymarket.com";
@@ -39,7 +39,7 @@ export async function fetchMarket(slug: string): Promise<GammaMarket | null> {
   const event = await fetchEvent(eventSlug);
   if (event && event.markets && event.markets.length > 0) {
     const match = event.markets.find((m) => m.slug === slug);
-    return match ?? event.markets[0] ?? null;
+    return match ?? null;
   }
   return null;
 }
@@ -58,11 +58,36 @@ export async function fetchBook(tokenId: string): Promise<ClobBook | null> {
   }
 }
 
+export async function fetchClobMarketInfo(
+  conditionId: string,
+): Promise<ClobMarketInfo | null> {
+  if (!conditionId) return null;
+  try {
+    const raw = await fetchJson<Record<string, unknown>>(
+      `${CLOB_BASE}/clob-markets/${encodeURIComponent(conditionId)}`,
+    );
+    const fdRaw = raw.fd as ClobFeeDetails | undefined;
+    const tbf = raw.tbf ?? raw.taker_base_fee ?? raw.takerBaseFee;
+    const mbf = raw.mbf ?? raw.maker_base_fee ?? raw.makerBaseFee;
+    const feesEnabled = raw.feesEnabled ?? (raw.ao === true ? null : null);
+    return {
+      conditionId: String(raw.c ?? raw.condition_id ?? raw.conditionId ?? conditionId),
+      takerBaseFee: Number(tbf ?? 0),
+      makerBaseFee: Number(mbf ?? 0),
+      feesEnabled: typeof feesEnabled === "boolean" ? feesEnabled : null,
+      fd: fdRaw ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export interface PolymarketFetchResult {
   event: GammaEvent | null;
   market: GammaMarket | null;
   book: ClobBook | null;
   yesTokenId: string | null;
+  clobInfo: ClobMarketInfo | null;
 }
 
 export async function fetchPolymarketData(
@@ -90,12 +115,16 @@ export async function fetchPolymarketData(
     }
   }
 
+  const clobInfo = market?.conditionId
+    ? await fetchClobMarketInfo(market.conditionId).catch(() => null)
+    : null;
+
   let book: ClobBook | null = null;
   if (yesTokenId) {
     book = await fetchBook(yesTokenId);
   }
 
-  return { event, market, book, yesTokenId };
+  return { event, market, book, yesTokenId, clobInfo };
 }
 
 export async function searchActiveSoccerEvents(

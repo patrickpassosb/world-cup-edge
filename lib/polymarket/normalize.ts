@@ -1,6 +1,7 @@
 import { CONFIG } from "@/lib/config";
 import type {
   ClobBook,
+  ClobMarketInfo,
   GammaEvent,
   GammaMarket,
   NormalizedPolymarket,
@@ -19,7 +20,7 @@ export function extractYesToken(
       return { tokenId: null, label: null };
     }
     const yesIdx = labels.findIndex(
-      (l) => l.toLowerCase() === "yes" || l.toLowerCase().includes("england"),
+      (l) => l.toLowerCase() === "yes" || l.toLowerCase() === "true",
     );
     if (yesIdx >= 0 && tokens[yesIdx]) {
       return { tokenId: tokens[yesIdx], label: labels[yesIdx] };
@@ -86,21 +87,21 @@ export function isBookEmpty(book: ClobBook | null): boolean {
   return !hasBids || !hasAsks;
 }
 
-export function extractFeeRate(market: GammaMarket | null): number | null {
+export function extractFeeRate(
+  market: GammaMarket | null,
+  clobInfo: ClobMarketInfo | null,
+): number | null {
+  if (!clobInfo || !clobInfo.fd) return null;
+  const { r, e, to } = clobInfo.fd;
+  if (r === null || typeof r !== "number" || !Number.isFinite(r) || r < 0) return null;
+  if (e !== null && e !== 1) return null;
+  if (to !== null && to !== true) return null;
+  return r;
+}
+
+export function extractMarketQuestion(market: GammaMarket | null): string | null {
   if (!market) return null;
-  const candidates = [
-    (market as unknown as { takerFee?: string }).takerFee,
-    (market as unknown as { feeRate?: string }).feeRate,
-    (market as unknown as { takerFeeBps?: string }).takerFeeBps,
-  ];
-  for (const c of candidates) {
-    if (c !== undefined && c !== null) {
-      const n = typeof c === "string" ? parseFloat(c) : c;
-      if (!Number.isNaN(n) && n >= 0) {
-        return n > 1 ? n / 10_000 : n;
-      }
-    }
-  }
+  if (market.question) return market.question;
   return null;
 }
 
@@ -139,6 +140,7 @@ export function normalizePolymarket(
   book: ClobBook | null,
   yesTokenId: string | null,
   receivedAt: number = Date.now(),
+  clobInfo: ClobMarketInfo | null = null,
 ): NormalizedPolymarket {
   const { tokenId, label } = extractYesToken(market);
   const effectiveTokenId = yesTokenId ?? tokenId;
@@ -148,10 +150,11 @@ export function normalizePolymarket(
   const bestBid = extractBestBid(book);
   const bookTimestamp = extractBookTimestamp(book);
   const bookEmpty = isBookEmpty(book);
-  const feeRate = extractFeeRate(market);
+  const feeRate = extractFeeRate(market, clobInfo);
   const teams = extractTeamsFromEvent(event);
   const matchDate = extractMatchDate(market);
   const resolutionWording = extractResolutionWording(market);
+  const marketQuestion = extractMarketQuestion(market);
 
   const fresh =
     bookTimestamp !== null &&
@@ -176,5 +179,6 @@ export function normalizePolymarket(
     awayTeam: teams.away,
     matchDate,
     resolutionWording,
+    marketQuestion,
   };
 }
