@@ -232,6 +232,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
 
   const alertEval = evaluateAlert({
     gapAfterFee,
+    feeRate,
     txlineFresh: snapshot.txline.fresh,
     polymarketFresh: snapshot.polymarket.fresh,
     sourceSkewMs: snapshot.sourceSkewMs,
@@ -310,6 +311,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
 
   const alertEval = evaluateAlert({
     gapAfterFee,
+    feeRate,
     txlineFresh: true,
     polymarketFresh: true,
     sourceSkewMs: snapshot.sourceSkewMs,

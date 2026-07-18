@@ -182,9 +182,10 @@ export class RealDataProvider implements DataProvider {
       expectedDate: matchMeta.date || null,
     });
 
-    const grossGap = computeGrossGap(normalizedTxline.probability, normalizedPoly.bestAsk);
+    const rawGrossGap = computeGrossGap(normalizedTxline.probability, normalizedPoly.bestAsk);
+    const grossGap = equivalence.passed ? rawGrossGap : null;
     const feePerShare = computeFeePerShare(normalizedPoly.feeRate, normalizedPoly.bestAsk);
-    const gapAfterFee = computeGapAfterFee(grossGap, feePerShare);
+    const gapAfterFee = equivalence.passed ? computeGapAfterFee(grossGap, feePerShare) : null;
 
     const sourceSkewMs =
       normalizedTxline.timestamp !== null && normalizedPoly.timestamp !== null
@@ -197,6 +198,7 @@ export class RealDataProvider implements DataProvider {
 
     const alertEval = evaluateAlert({
       gapAfterFee,
+      feeRate: normalizedPoly.feeRate,
       txlineFresh: normalizedTxline.fresh,
       polymarketFresh: normalizedPoly.fresh,
       sourceSkewMs,

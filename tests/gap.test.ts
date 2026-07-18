@@ -72,6 +72,7 @@ describe("computeGapAfterFee", () => {
 
 describe("evaluateAlert threshold logic", () => {
   const baseInput = {
+    feeRate: 0.05,
     txlineFresh: true,
     polymarketFresh: true,
     sourceSkewMs: 1000,
@@ -121,6 +122,7 @@ describe("evaluateAlert threshold logic", () => {
 describe("evaluateAlert fail-closed", () => {
   const baseInput = {
     gapAfterFee: 0.1,
+    feeRate: 0.05,
     txlineFresh: true,
     polymarketFresh: true,
     sourceSkewMs: 1000,
@@ -207,6 +209,29 @@ describe("evaluateAlert fail-closed", () => {
     const result = evaluateAlert({ ...baseInput, serviceLevel: 1 });
     expect(result.alert.active).toBe(false);
     expect(result.alert.suppressedReason).toContain("level 1");
+  });
+
+  it("suppresses alert when fee rate is null", () => {
+    const result = evaluateAlert({ ...baseInput, feeRate: null });
+    expect(result.alert.active).toBe(false);
+    expect(result.alert.suppressedReason).toContain("fee rate");
+  });
+
+  it("suppresses alert when fee rate is negative", () => {
+    const result = evaluateAlert({ ...baseInput, feeRate: -0.01 });
+    expect(result.alert.active).toBe(false);
+    expect(result.alert.suppressedReason).toContain("fee rate");
+  });
+
+  it("suppresses alert when fee rate is NaN", () => {
+    const result = evaluateAlert({ ...baseInput, feeRate: NaN });
+    expect(result.alert.active).toBe(false);
+    expect(result.alert.suppressedReason).toContain("fee rate");
+  });
+
+  it("accepts fee-free market (feeRate=0)", () => {
+    const result = evaluateAlert({ ...baseInput, feeRate: 0 });
+    expect(result.alert.suppressedReason).toBe(null);
   });
 });
 

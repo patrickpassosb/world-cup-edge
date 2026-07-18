@@ -37,6 +37,7 @@ export function computeGapAfterFee(
 
 export interface AlertInput {
   gapAfterFee: number | null;
+  feeRate: number | null;
   txlineFresh: boolean;
   polymarketFresh: boolean;
   sourceSkewMs: number | null;
@@ -91,6 +92,8 @@ export function evaluateAlert(input: AlertInput): {
     suppressedReason = "Polymarket market is not accepting orders. Alerts suppressed.";
   } else if (input.bookEmpty) {
     suppressedReason = "Polymarket book is empty. Alerts suppressed.";
+  } else if (input.feeRate === null || !Number.isFinite(input.feeRate) || input.feeRate < 0) {
+    suppressedReason = "Polymarket fee rate is unavailable. Alerts suppressed.";
   } else if (input.gapAfterFee === null || !Number.isFinite(input.gapAfterFee)) {
     suppressedReason = "Gap value is missing or invalid. Alerts suppressed.";
   }
