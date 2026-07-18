@@ -4,8 +4,16 @@ import type { Snapshot } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const provider = createProvider();
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const fixtureIdRaw = searchParams.get("fixtureId");
+  const marketSlugRaw = searchParams.get("marketSlug");
+  const fixtureId = fixtureIdRaw !== null ? Number(fixtureIdRaw) : undefined;
+  const marketSlug = marketSlugRaw !== null && marketSlugRaw !== "" ? marketSlugRaw : undefined;
+  const provider = createProvider(
+    Number.isFinite(fixtureId) ? (fixtureId as number) : undefined,
+    marketSlug,
+  );
 
   try {
     const snapshot = await provider.getSnapshot();

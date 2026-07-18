@@ -99,3 +99,15 @@ export interface Snapshot {
   receivedAt: number;
   errorMessage: string | null;
 }
+
+export interface MatchEntry {
+  fixtureId: number;
+  homeTeam: string;
+  awayTeam: string;
+  kickoffUTC: string;
+  competition: string;
+  gameState: number;
+  polymarketEventSlug: string | null;
+  polymarketMarketSlug: string | null;
+  hasPolymarketMarket: boolean;
+}

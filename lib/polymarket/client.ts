@@ -100,3 +100,71 @@ export async function fetchPolymarketData(
 
   return { event, market, book, yesTokenId };
 }
+
+export async function searchActiveSoccerEvents(
+  limit = 100,
+): Promise<GammaEvent[]> {
+  try {
+    const data = await fetchJson<unknown>(
+      `${GAMMA_BASE}/events?active=true&closed=false&limit=${limit}`,
+    );
+    if (!Array.isArray(data)) return [];
+    return data as GammaEvent[];
+  } catch {
+    return [];
+  }
+}
+
+let cachedEvents: { data: GammaEvent[]; ts: number } | null = null;
+
+function normalizeTeamName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+export async function findPolymarketMatchForTeams(
+  home: string,
+  away: string,
+): Promise<{ eventSlug: string; marketSlug: string } | null> {
+  try {
+    let events: GammaEvent[];
+    if (cachedEvents && Date.now() - cachedEvents.ts <= 60_000) {
+      events = cachedEvents.data;
+    } else {
+      events = await searchActiveSoccerEvents();
+      cachedEvents = { data: events, ts: Date.now() };
+    }
+
+    const homeNorm = normalizeTeamName(home);
+    const awayNorm = normalizeTeamName(away);
+    if (!homeNorm || !awayNorm) return null;
+
+    const matchedEvent = events.find((ev) => {
+      const titleNorm = normalizeTeamName(ev.title);
+      return (
+        titleNorm.includes(homeNorm) && titleNorm.includes(awayNorm)
+      );
+    });
+    if (!matchedEvent) return null;
+
+    const markets = Array.isArray(matchedEvent.markets)
+      ? matchedEvent.markets
+      : [];
+    if (markets.length === 0) return null;
+
+    const homeMarket = markets.find((m) => {
+      const q = normalizeTeamName(m.question);
+      return q.includes(homeNorm);
+    });
+    const market: GammaMarket | undefined = homeMarket ?? markets[0];
+    if (!market) return null;
+
+    return { eventSlug: matchedEvent.slug, marketSlug: market.slug };
+  } catch {
+    return null;
+  }
+}

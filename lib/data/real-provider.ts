@@ -30,19 +30,28 @@ function buildVerificationChecks(
 }
 
 export class RealDataProvider implements DataProvider {
+  private fixtureId: number;
+  private marketSlug: string;
+  private eventSlug: string;
   private previousPhase: AlertPhase = "IDLE";
   private previousConsecutiveSamples = 0;
   private lastAlertTime: number | null = null;
   private lastDedupeKey: string | null = null;
 
+  constructor(fixtureId?: number, marketSlug?: string) {
+    this.fixtureId = fixtureId ?? CONFIG.txline.fixtureId;
+    this.marketSlug = marketSlug ?? CONFIG.polymarket.marketSlug;
+    this.eventSlug = this.marketSlug.replace(/-(eng|draw|arg)$/, "") || CONFIG.polymarket.eventSlug;
+  }
+
   async getSnapshot(): Promise<Snapshot> {
     const now = Date.now();
 
     const [txlineResult, polyResult] = await Promise.all([
-      fetchOddsForMatch().catch((e) => {
+      fetchOddsForMatch(this.fixtureId).catch((e) => {
         return { error: e instanceof Error ? e.message : String(e) };
       }),
-      fetchPolymarketData().catch((e) => {
+      fetchPolymarketData(this.eventSlug, this.marketSlug).catch((e) => {
         return { error: e instanceof Error ? e.message : String(e) };
       }),
     ]);

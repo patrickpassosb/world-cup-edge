@@ -15,7 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { DISCLAIMER_LINES, MATCH } from "@/lib/config";
-import type { SessionAlert, Snapshot } from "@/lib/types";
+import type { MatchEntry, SessionAlert, Snapshot } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -82,25 +82,177 @@ function buildExplanation(snapshot: Snapshot): string {
   return "TxLINE consensus and Polymarket best ask are aligned. No meaningful gap detected.";
 }
 
+function formatKickoffRelative(kickoffUTC: string): string {
+  const target = new Date(kickoffUTC);
+  const now = new Date();
+  const hh = String(target.getUTCHours()).padStart(2, "0");
+  const mm = String(target.getUTCMinutes()).padStart(2, "0");
+  const timeStr = `${hh}:${mm}`;
+  const dayDiff = Math.floor((target.getTime() - now.getTime()) / 86_400_000);
+  if (dayDiff <= 0) return `Today ${timeStr}`;
+  if (dayDiff === 1) return `Tomorrow ${timeStr}`;
+  if (dayDiff < 7) {
+    const ddd = target.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+    return `${ddd} ${timeStr}`;
+  }
+  const month = target.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+  const day = target.getUTCDate();
+  return `${month} ${day} ${timeStr}`;
+}
+
+interface MatchPickerSectionProps {
+  matches: MatchEntry[];
+  selectedFixtureId: number | null;
+  onSelect: (match: MatchEntry) => void;
+  loading: boolean;
+  error: string | null;
+}
+
+function MatchPickerSection({
+  matches,
+  selectedFixtureId,
+  onSelect,
+  loading,
+  error,
+}: MatchPickerSectionProps) {
+  if (loading && matches.length === 0) {
+    return (
+      <div className="mb-6 overflow-x-auto border-b border-outline-variant">
+        <div className="flex min-w-max pb-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="mr-3 h-16 w-48 animate-pulse bg-surface-container-high"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error !== null && matches.length === 0) {
+    return (
+      <div className="mb-6 flex items-center gap-3 border-b border-outline-variant pb-4">
+        <XCircle className="h-5 w-5 text-error" aria-hidden="true" />
+        <span className="text-error">{error}</span>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="ml-auto border border-on-surface px-3 py-2 text-xs font-bold uppercase tracking-[0.05em] text-on-surface transition-colors duration-100 hover:bg-on-surface hover:text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Retry now
+        </button>
+      </div>
+    );
+  }
+
+  if (!loading && !error && matches.length === 0) {
+    return (
+      <div className="mb-6 flex items-center justify-center gap-2 border-b border-outline-variant pb-4 text-center">
+        <Clock className="h-5 w-5 text-on-surface-variant" aria-hidden="true" />
+        <span className="italic text-on-surface-variant">No upcoming World Cup fixtures</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 overflow-x-auto border-b border-outline-variant">
+      <div className="flex min-w-max pb-2">
+        {matches.map((match) => {
+          const isSelected = match.fixtureId === selectedFixtureId;
+          return (
+            <button
+              key={match.fixtureId}
+              type="button"
+              onClick={() => onSelect(match)}
+              aria-label={`Select match: ${match.homeTeam} vs ${match.awayTeam}`}
+              aria-pressed={isSelected}
+              className={`min-w-[200px] border-b-2 px-4 py-3 text-left whitespace-nowrap transition-colors duration-100 hover:bg-surface-container ${
+                isSelected
+                  ? "border-primary text-on-surface"
+                  : "border-transparent text-on-surface-variant opacity-50"
+              }`}
+            >
+              <div className="font-bold">{`${match.homeTeam} vs ${match.awayTeam}`}</div>
+              <div suppressHydrationWarning className="text-sm">
+                {formatKickoffRelative(match.kickoffUTC)}
+                {!match.hasPolymarketMarket && (
+                  <span className="ml-2 text-xs text-on-surface-variant">TxLINE only</span>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [countdown, setCountdown] = useState<string>(formatCountdown(MATCH.kickoffUTC));
   const [sessionAlerts, setSessionAlerts] = useState<SessionAlert[]>([]);
+  const [matches, setMatches] = useState<MatchEntry[]>([]);
+  const [matchesLoading, setMatchesLoading] = useState(true);
+  const [matchesError, setMatchesError] = useState<string | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<MatchEntry | null>(null);
   const lastDedupeKeyRef = useRef<string | null>(null);
+
+  const selectedFixtureId = selectedMatch?.fixtureId ?? null;
+  const txlineOnly = selectedMatch !== null && !selectedMatch.hasPolymarketMarket;
 
   useEffect(() => {
     let cancelled = false;
 
+    const run = async () => {
+      try {
+        const res = await fetch("/api/matches", { cache: "no-store" });
+        if (cancelled) return;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: MatchEntry[] = await res.json();
+        if (cancelled) return;
+        setMatches(data);
+        setMatchesError(null);
+        setSelectedMatch(data[0] ?? null);
+      } catch {
+        if (!cancelled) {
+          setMatchesError("Failed to load matches.");
+          setMatches([]);
+          setSelectedMatch(null);
+        }
+      } finally {
+        if (!cancelled) setMatchesLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedMatch === null) {
+      const raf = requestAnimationFrame(() => setSnapshot(null));
+      return () => cancelAnimationFrame(raf);
+    }
+    let cancelled = false;
+    lastDedupeKeyRef.current = null;
+
     const doPoll = async () => {
       try {
-        const res = await fetch("/api/snapshot", { cache: "no-store" });
+        let url = "/api/snapshot?fixtureId=" + encodeURIComponent(selectedMatch.fixtureId);
+        if (selectedMatch.hasPolymarketMarket && selectedMatch.polymarketMarketSlug) {
+          url += "&marketSlug=" + encodeURIComponent(selectedMatch.polymarketMarketSlug);
+        }
+        const res = await fetch(url, { cache: "no-store" });
         if (cancelled) return;
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: Snapshot = await res.json();
         if (cancelled) return;
         setSnapshot(data);
 
-        if (data.alert.active) {
+        if (data.alert.active && !txlineOnly) {
           const dedupeKey = data.alert.dedupeKey;
           if (dedupeKey !== lastDedupeKeyRef.current) {
             lastDedupeKeyRef.current = dedupeKey;
@@ -137,14 +289,14 @@ export default function DashboardPage() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [selectedMatch, txlineOnly]);
 
   useEffect(() => {
-    const update = () => setCountdown(formatCountdown(MATCH.kickoffUTC));
+    const update = () => setCountdown(formatCountdown(selectedMatch?.kickoffUTC ?? MATCH.kickoffUTC));
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedMatch?.kickoffUTC]);
 
   const displayState = deriveDisplayState(snapshot);
 
@@ -152,11 +304,18 @@ export default function DashboardPage() {
     <div className="flex min-h-full flex-col">
       <TopBar />
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8 md:px-8">
-        <HeaderSection countdown={countdown} snapshot={snapshot} />
-        <FocalPointSection snapshot={snapshot} displayState={displayState} />
-        <TwoColumnSection snapshot={snapshot} displayState={displayState} />
-        <StatusBadges displayState={displayState} />
-        <SessionAlertsSection alerts={sessionAlerts} displayState={displayState} />
+        <MatchPickerSection
+          matches={matches}
+          selectedFixtureId={selectedFixtureId}
+          onSelect={setSelectedMatch}
+          loading={matchesLoading}
+          error={matchesError}
+        />
+        <HeaderSection countdown={countdown} snapshot={snapshot} selectedMatch={selectedMatch} />
+        <FocalPointSection snapshot={snapshot} displayState={displayState} txlineOnly={txlineOnly} />
+        <TwoColumnSection snapshot={snapshot} displayState={displayState} txlineOnly={txlineOnly} />
+        <StatusBadges displayState={displayState} txlineOnly={txlineOnly} snapshot={snapshot} />
+        <SessionAlertsSection alerts={sessionAlerts} displayState={displayState} txlineOnly={txlineOnly} />
       </main>
       <Footer />
     </div>
@@ -189,12 +348,18 @@ function TopBar() {
 function HeaderSection({
   countdown,
   snapshot,
+  selectedMatch,
 }: {
   countdown: string;
   snapshot: Snapshot | null;
+  selectedMatch: MatchEntry | null;
 }) {
-  const matchName = snapshot?.match.name ?? MATCH.matchName;
-  const matchDate = snapshot?.match.date ?? MATCH.matchDate;
+  const matchName = selectedMatch
+    ? `${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`
+    : snapshot?.match.name ?? MATCH.matchName;
+  const matchDate = selectedMatch
+    ? selectedMatch.kickoffUTC.slice(0, 10)
+    : snapshot?.match.date ?? MATCH.matchDate;
   const matchRules = snapshot?.match.rules ?? MATCH.rules;
 
   return (
@@ -227,10 +392,30 @@ function HeaderSection({
 function FocalPointSection({
   snapshot,
   displayState,
+  txlineOnly,
 }: {
   snapshot: Snapshot | null;
   displayState: DisplayState;
+  txlineOnly: boolean;
 }) {
+  if (txlineOnly) {
+    return (
+      <section className="border-b border-outline-variant py-12 text-center md:py-16">
+        <div className="inline-block max-w-full">
+          <p className="mb-2 font-mono text-[64px] font-bold leading-none tracking-tight tabular-nums text-on-surface-variant md:text-[96px]">
+            Gap monitoring disabled
+          </p>
+          <h2 className="mb-4 font-sans text-xs font-bold uppercase tracking-[0.2em] text-on-surface">
+            TxLINE consensus only
+          </h2>
+          <p className="mx-auto max-w-xl border-t border-on-surface pt-4 text-base leading-6 text-on-surface">
+            No Polymarket market for this match. Showing TxLINE consensus only.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   if (displayState === "loading") {
     return (
       <section className="border-b border-outline-variant py-16 text-center">
@@ -283,15 +468,17 @@ function FocalPointSection({
 function TwoColumnSection({
   snapshot,
   displayState,
+  txlineOnly,
 }: {
   snapshot: Snapshot | null;
   displayState: DisplayState;
+  txlineOnly: boolean;
 }) {
   return (
     <section className="grid grid-cols-1 border-b border-outline-variant md:min-h-[628px] md:grid-cols-2">
       <TxlineColumn snapshot={snapshot} displayState={displayState} />
       <div className="border-t border-outline-variant md:border-t-0">
-        <PolymarketColumn snapshot={snapshot} displayState={displayState} />
+        <PolymarketColumn snapshot={snapshot} displayState={displayState} txlineOnly={txlineOnly} />
       </div>
     </section>
   );
@@ -359,10 +546,24 @@ function TxlineColumn({
 function PolymarketColumn({
   snapshot,
   displayState,
+  txlineOnly,
 }: {
   snapshot: Snapshot | null;
   displayState: DisplayState;
+  txlineOnly: boolean;
 }) {
+  if (txlineOnly) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center py-10 pl-0 text-center md:py-12 md:pl-6">
+        <h3 className="mb-6 font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+          Polymarket Top-of-Book Quote
+        </h3>
+        <WifiOff className="mb-4 h-8 w-8 text-on-surface-variant" aria-hidden="true" />
+        <p className="text-on-surface-variant">No Polymarket market for this match.</p>
+      </div>
+    );
+  }
+
   const bestAsk = snapshot?.polymarket.bestAsk ?? null;
   const fresh = snapshot?.polymarket.fresh ?? false;
   const age = formatAge(snapshot?.polymarket.receivedAt ?? null, snapshot?.polymarket.timestamp ?? null);
@@ -479,14 +680,33 @@ const STATUS_BADGES: {
   { state: "error", label: "Error", Icon: XCircle },
 ];
 
-function StatusBadges({ displayState }: { displayState: DisplayState }) {
+function StatusBadges({
+  displayState,
+  txlineOnly,
+  snapshot,
+}: {
+  displayState: DisplayState;
+  txlineOnly: boolean;
+  snapshot: Snapshot | null;
+}) {
   return (
     <section className="mb-12 border-y border-on-surface py-8 md:py-12">
       <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 md:gap-x-8">
         {STATUS_BADGES.map(({ state, label, Icon }) => {
-          const active =
+          let active =
             displayState === state ||
             (state === "live" && (displayState === "no-alert" || displayState === "alert"));
+          if (txlineOnly) {
+            if (state === "alert" || state === "unavailable") {
+              active = false;
+            } else if (state === "no-alert") {
+              active = true;
+            } else if (state === "live") {
+              active = snapshot?.status === "live";
+            } else if (state === "stale") {
+              active = snapshot?.status === "stale";
+            }
+          }
           return (
             <div
               key={state}
@@ -509,10 +729,40 @@ function StatusBadges({ displayState }: { displayState: DisplayState }) {
 function SessionAlertsSection({
   alerts,
   displayState,
+  txlineOnly,
 }: {
   alerts: SessionAlert[];
   displayState: DisplayState;
+  txlineOnly: boolean;
 }) {
+  if (txlineOnly) {
+    return (
+      <section className="mb-12">
+        <div className="mb-6 flex items-center">
+          <h2 className="shrink-0 font-serif text-2xl font-semibold italic text-on-surface">Session alerts</h2>
+          <div className="ml-8 h-px flex-1 bg-outline-variant" />
+        </div>
+        <div className="overflow-x-auto">
+          <div className="font-mono text-sm md:min-h-[198px] md:min-w-[680px]">
+            <div className="grid grid-cols-[72px_120px_82px_1fr] border-b border-outline-variant py-2 uppercase tracking-[0.04em] text-on-surface-variant md:grid-cols-[100px_150px_120px_1fr]">
+              <span>Time</span>
+              <span>Match</span>
+              <span>Gap</span>
+              <span className="hidden md:block">Summary</span>
+            </div>
+            <div className="grid grid-cols-[100px_1fr] border-b border-outline-variant py-4 text-on-surface-variant">
+              <Circle className="h-4 w-4 self-center" aria-hidden="true" />
+              <span>No alerts generated this session.</span>
+            </div>
+            <div className="py-4 text-sm text-on-surface-variant">
+              Gap monitoring disabled — no Polymarket market for this match.
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (displayState === "error" && alerts.length === 0) {
     return (
       <section className="mb-12">
