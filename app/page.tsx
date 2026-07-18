@@ -246,6 +246,8 @@ export default function DashboardPage() {
   const [outcome, setOutcome] = useState<Outcome>("home");
   const lastDedupeKeyRef = useRef<string | null>(null);
 
+  const isReplay = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "replay";
+
   const selectedFixtureId = selectedMatch?.fixtureId ?? null;
   const txlineOnly = selectedMatch !== null && !selectedMatch.hasPolymarketMarket;
 
@@ -254,7 +256,8 @@ export default function DashboardPage() {
 
     const run = async () => {
       try {
-        const res = await fetch("/api/matches", { cache: "no-store" });
+        const matchesUrl = isReplay ? "/api/matches?demo=replay" : "/api/matches";
+        const res = await fetch(matchesUrl, { cache: "no-store" });
         if (cancelled) return;
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: MatchEntry[] = await res.json();
@@ -277,7 +280,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isReplay]);
 
   useEffect(() => {
     if (selectedMatch === null) {
@@ -306,6 +309,7 @@ export default function DashboardPage() {
         params.set("homeTeam", selectedMatch.homeTeam);
         params.set("awayTeam", selectedMatch.awayTeam);
         params.set("kickoffUTC", selectedMatch.kickoffUTC);
+        if (isReplay) params.set("demo", "replay");
 
         const res = await fetch(`/api/snapshot?${params.toString()}`, {
           cache: "no-store",
@@ -355,7 +359,7 @@ export default function DashboardPage() {
       controller.abort();
       clearInterval(interval);
     };
-  }, [selectedMatch, outcome, txlineOnly]);
+  }, [selectedMatch, outcome, txlineOnly, isReplay]);
 
   useEffect(() => {
     const update = () => setCountdown(formatCountdown(selectedMatch?.kickoffUTC ?? MATCH.kickoffUTC));
@@ -369,6 +373,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-full flex-col">
       <TopBar />
+      {isReplay && <ReplayBanner />}
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8 md:px-8">
         <MatchPickerSection
           matches={matches}
@@ -405,6 +410,23 @@ function TopBar() {
         </div>
       </div>
     </header>
+  );
+}
+
+function ReplayBanner() {
+  return (
+    <div
+      className="bg-alert text-on-surface px-4 py-2 md:px-8"
+      role="alert"
+      aria-live="assertive"
+    >
+      <div className="mx-auto flex w-full max-w-[1280px] items-center gap-2">
+        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <p className="font-sans text-xs font-bold uppercase tracking-[0.05em]">
+          Replay mode — simulated historical data. Not live.
+        </p>
+      </div>
+    </div>
   );
 }
 

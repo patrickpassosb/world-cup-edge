@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createProvider } from "@/lib/data";
+import { MockDataProvider } from "@/lib/data/mock-provider";
+import { isReplayMode } from "@/lib/data/replay";
 import type { Outcome, Snapshot } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +13,25 @@ function parseOutcome(value: string | null): Outcome | undefined {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+
+  if (isReplayMode(searchParams.get("demo"))) {
+    const provider = new MockDataProvider("alert", parseOutcome(searchParams.get("outcome")));
+    try {
+      const snapshot = await provider.getSnapshot();
+      return NextResponse.json(snapshot, {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          "X-Replay-Mode": "true",
+        },
+      });
+    } catch {
+      return NextResponse.json(
+        { error: "Replay mode failed" },
+        { status: 500, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+  }
+
   const fixtureIdRaw = searchParams.get("fixtureId");
   const marketSlugRaw = searchParams.get("marketSlug");
   const outcomeRaw = searchParams.get("outcome");
