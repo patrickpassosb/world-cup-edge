@@ -181,6 +181,22 @@ describe("isBookEmpty", () => {
     expect(isBookEmpty(makeBook({ bids: [], asks: [] }))).toBe(true);
   });
 
+  it("returns true when only asks are empty (half-empty)", () => {
+    const book = makeBook({
+      bids: [{ price: "0.40", size: "100" }],
+      asks: [],
+    });
+    expect(isBookEmpty(book)).toBe(true);
+  });
+
+  it("returns true when only bids are empty (half-empty)", () => {
+    const book = makeBook({
+      bids: [],
+      asks: [{ price: "0.50", size: "100" }],
+    });
+    expect(isBookEmpty(book)).toBe(true);
+  });
+
   it("returns true for null book", () => {
     expect(isBookEmpty(null)).toBe(true);
   });

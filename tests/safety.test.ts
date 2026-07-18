@@ -111,6 +111,33 @@ describe("safety: level 1 delay suppresses alert", () => {
   });
 });
 
+describe("safety: cancelled fixture suppresses alert", () => {
+  it("suppresses alert when fixtureGameState is 6 (cancelled)", () => {
+    const result = evaluateAlert({
+      ...healthyInput,
+      fixtureGameState: 6,
+    });
+    expect(result.alert.active).toBe(false);
+    expect(result.alert.suppressedReason).toContain("cancelled");
+  });
+
+  it("does not suppress when fixtureGameState is 1 (scheduled)", () => {
+    const result = evaluateAlert({
+      ...healthyInput,
+      fixtureGameState: 1,
+    });
+    expect(result.alert.active).toBe(true);
+  });
+
+  it("does not suppress when fixtureGameState is null (unknown)", () => {
+    const result = evaluateAlert({
+      ...healthyInput,
+      fixtureGameState: null,
+    });
+    expect(result.alert.active).toBe(true);
+  });
+});
+
 describe("safety: duplicate message does not re-alert", () => {
   it("does not fire a second alert for the same dedupe key within cooldown", () => {
     const first = evaluateAlert(healthyInput);
