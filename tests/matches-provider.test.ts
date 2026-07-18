@@ -148,20 +148,26 @@ describe("fetchAvailableMatches", () => {
     const result = await fetchAvailableMatches();
     expect(result[0].hasPolymarketMarket).toBe(false);
     expect(result[0].polymarketEventSlug).toBeNull();
-    expect(result[0].polymarketMarketSlug).toBeNull();
+    expect(result[0].polymarketHomeMarketSlug).toBeNull();
+    expect(result[0].polymarketDrawMarketSlug).toBeNull();
+    expect(result[0].polymarketAwayMarketSlug).toBeNull();
   });
 
-  it("marks hasPolymarketMarket=true and carries slugs when a match is found", async () => {
+  it("marks hasPolymarketMarket=true and carries 3 market slugs when a match is found", async () => {
     fetchFixturesMock.mockResolvedValue([makeFixture()]);
     findPolymarketMatchForTeamsMock.mockResolvedValue({
       eventSlug: "fifwc-fra-eng-2026-07-15",
-      marketSlug: "fifwc-fra-eng-2026-07-15-fra",
+      homeMarketSlug: "fifwc-fra-eng-2026-07-15-fra",
+      drawMarketSlug: "fifwc-fra-eng-2026-07-15-draw",
+      awayMarketSlug: "fifwc-fra-eng-2026-07-15-eng",
     });
     const { fetchAvailableMatches } = await import("@/lib/data/matches-provider");
     const result = await fetchAvailableMatches();
     expect(result[0].hasPolymarketMarket).toBe(true);
     expect(result[0].polymarketEventSlug).toBe("fifwc-fra-eng-2026-07-15");
-    expect(result[0].polymarketMarketSlug).toBe("fifwc-fra-eng-2026-07-15-fra");
+    expect(result[0].polymarketHomeMarketSlug).toBe("fifwc-fra-eng-2026-07-15-fra");
+    expect(result[0].polymarketDrawMarketSlug).toBe("fifwc-fra-eng-2026-07-15-draw");
+    expect(result[0].polymarketAwayMarketSlug).toBe("fifwc-fra-eng-2026-07-15-eng");
   });
 
   it("skips fixtures whose startTime is not a valid timestamp", async () => {
@@ -191,7 +197,7 @@ describe("findPolymarketMatchForTeams", () => {
     vi.resetModules();
   });
 
-  it("returns null when searchActiveSoccerEvents returns empty array", async () => {
+  it("returns null when the event slug does not exist", async () => {
     vi.resetModules();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -201,104 +207,98 @@ describe("findPolymarketMatchForTeams", () => {
     const { findPolymarketMatchForTeams } = await import(
       "@/lib/polymarket/client"
     );
-    const result = await findPolymarketMatchForTeams("France", "England");
+    const result = await findPolymarketMatchForTeams(
+      "France",
+      "England",
+      "2026-07-15T19:00:00.000Z",
+    );
     expect(result).toBeNull();
   });
 
-  it("matches an event whose title contains both team names", async () => {
+  it("finds the event by slug and returns all 3 market slugs", async () => {
     vi.resetModules();
+    const event = makeEvent({
+      slug: "fifwc-fra-eng-2026-07-15",
+      markets: [
+        makeMarket({
+          slug: "fifwc-fra-eng-2026-07-15-fra",
+          question: "Will France win on 2026-07-15?",
+        }),
+        makeMarket({
+          slug: "fifwc-fra-eng-2026-07-15-draw",
+          question: "Will the match end in a draw?",
+        }),
+        makeMarket({
+          slug: "fifwc-fra-eng-2026-07-15-eng",
+          question: "Will England win on 2026-07-15?",
+        }),
+      ],
+    });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => [makeEvent()],
+      json: async () => [event],
     });
     global.fetch = fetchMock as unknown as typeof global.fetch;
     const { findPolymarketMatchForTeams } = await import(
       "@/lib/polymarket/client"
     );
-    const result = await findPolymarketMatchForTeams("France", "England");
+    const result = await findPolymarketMatchForTeams(
+      "France",
+      "England",
+      "2026-07-15T19:00:00.000Z",
+    );
     expect(result).not.toBeNull();
     expect(result?.eventSlug).toBe("fifwc-fra-eng-2026-07-15");
+    expect(result?.homeMarketSlug).toBe("fifwc-fra-eng-2026-07-15-fra");
+    expect(result?.drawMarketSlug).toBe("fifwc-fra-eng-2026-07-15-draw");
+    expect(result?.awayMarketSlug).toBe("fifwc-fra-eng-2026-07-15-eng");
   });
 
-  it("strips accents when matching team names", async () => {
+  it("strips accents when building the team code", async () => {
     vi.resetModules();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [
-        makeEvent({ title: "Côte d'Ivoire vs. Ghana" }),
-      ],
-    });
-    global.fetch = fetchMock as unknown as typeof global.fetch;
-    const { findPolymarketMatchForTeams } = await import(
-      "@/lib/polymarket/client"
-    );
-    const result = await findPolymarketMatchForTeams("Cote d'Ivoire", "Ghana");
-    expect(result).not.toBeNull();
-  });
-
-  it("picks the market whose question contains the home team", async () => {
-    vi.resetModules();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [
-        makeEvent({
-          markets: [
-            makeMarket({
-              slug: "fifwc-fra-eng-2026-07-15-fra",
-              question: "Will France win on 2026-07-15?",
-            }),
-            makeMarket({
-              slug: "fifwc-fra-eng-2026-07-15-eng",
-              question: "Will England win on 2026-07-15?",
-            }),
-          ],
+    const event = makeEvent({
+      slug: "fifwc-civ-gha-2026-07-15",
+      markets: [
+        makeMarket({
+          slug: "fifwc-civ-gha-2026-07-15-civ",
+          question: "Will Côte d'Ivoire win on 2026-07-15?",
         }),
       ],
     });
-    global.fetch = fetchMock as unknown as typeof global.fetch;
-    const { findPolymarketMatchForTeams } = await import(
-      "@/lib/polymarket/client"
-    );
-    const result = await findPolymarketMatchForTeams("France", "England");
-    expect(result).not.toBeNull();
-    expect(result?.marketSlug).toBe("fifwc-fra-eng-2026-07-15-fra");
-  });
-
-  it("falls back to event.markets[0] when no question matches the home team", async () => {
-    vi.resetModules();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => [
-        makeEvent({
-          markets: [
-            makeMarket({
-              slug: "fifwc-fra-eng-2026-07-15-draw",
-              question: "Will the match end in a draw?",
-            }),
-          ],
-        }),
-      ],
+      json: async () => [event],
     });
     global.fetch = fetchMock as unknown as typeof global.fetch;
     const { findPolymarketMatchForTeams } = await import(
       "@/lib/polymarket/client"
     );
-    const result = await findPolymarketMatchForTeams("France", "England");
+    const result = await findPolymarketMatchForTeams(
+      "Côte d'Ivoire",
+      "Ghana",
+      "2026-07-15T19:00:00.000Z",
+    );
     expect(result).not.toBeNull();
-    expect(result?.marketSlug).toBe("fifwc-fra-eng-2026-07-15-draw");
+    expect(result?.eventSlug).toBe("fifwc-civ-gha-2026-07-15");
+    expect(result?.homeMarketSlug).toBe("fifwc-civ-gha-2026-07-15-civ");
   });
 
-  it("returns null when no event matches", async () => {
+  it("returns null when the event is closed", async () => {
     vi.resetModules();
+    const event = makeEvent({ closed: true });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => [makeEvent({ title: "Brazil vs. Germany" })],
+      json: async () => [event],
     });
     global.fetch = fetchMock as unknown as typeof global.fetch;
     const { findPolymarketMatchForTeams } = await import(
       "@/lib/polymarket/client"
     );
-    const result = await findPolymarketMatchForTeams("France", "England");
+    const result = await findPolymarketMatchForTeams(
+      "France",
+      "England",
+      "2026-07-15T19:00:00.000Z",
+    );
     expect(result).toBeNull();
   });
 
@@ -309,23 +309,31 @@ describe("findPolymarketMatchForTeams", () => {
     const { findPolymarketMatchForTeams } = await import(
       "@/lib/polymarket/client"
     );
-    const result = await findPolymarketMatchForTeams("France", "England");
+    const result = await findPolymarketMatchForTeams(
+      "France",
+      "England",
+      "2026-07-15T19:00:00.000Z",
+    );
     expect(result).toBeNull();
   });
 
-  it("caches events across calls within 60s", async () => {
+  it("returns null when called with empty team names or kickoff", async () => {
     vi.resetModules();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [makeEvent()],
-    });
+    const fetchMock = vi.fn();
     global.fetch = fetchMock as unknown as typeof global.fetch;
     const { findPolymarketMatchForTeams } = await import(
       "@/lib/polymarket/client"
     );
-    await findPolymarketMatchForTeams("France", "England");
-    await findPolymarketMatchForTeams("France", "England");
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(
+      await findPolymarketMatchForTeams("", "England", "2026-07-15T19:00:00.000Z"),
+    ).toBeNull();
+    expect(
+      await findPolymarketMatchForTeams("France", "", "2026-07-15T19:00:00.000Z"),
+    ).toBeNull();
+    expect(
+      await findPolymarketMatchForTeams("France", "England", ""),
+    ).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

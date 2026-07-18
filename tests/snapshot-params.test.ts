@@ -16,7 +16,22 @@ describe("createProvider param routing", () => {
   });
 
   it("returns a RealDataProvider when fixtureId and marketSlug are provided", () => {
-    const provider = createProvider(18257865, "fifwc-eng-arg-2026-07-15-eng");
+    const provider = createProvider({
+      fixtureId: 18257865,
+      homeMarketSlug: "fifwc-fra-eng-2026-07-18-fra",
+    });
+    expect(provider).toBeInstanceOf(RealDataProvider);
+  });
+
+  it("returns a RealDataProvider with outcome param", () => {
+    const provider = createProvider({
+      fixtureId: 18257865,
+      homeMarketSlug: "fifwc-fra-eng-2026-07-18-fra",
+      outcome: "away",
+      homeTeam: "France",
+      awayTeam: "England",
+      kickoffISO: "2026-07-18T21:00:00.000Z",
+    });
     expect(provider).toBeInstanceOf(RealDataProvider);
   });
 });
@@ -35,8 +50,13 @@ describe("createProvider backward compat (mock)", () => {
     expect(provider).toBeInstanceOf(MockDataProvider);
   });
 
-  it("returns a MockDataProvider when called with undefined args and no DATA_SOURCE", () => {
-    const provider = createProvider(undefined, undefined);
+  it("returns a MockDataProvider when called with empty args and no DATA_SOURCE", () => {
+    const provider = createProvider({});
+    expect(provider).toBeInstanceOf(MockDataProvider);
+  });
+
+  it("returns a MockDataProvider with outcome param", () => {
+    const provider = createProvider({ outcome: "draw" });
     expect(provider).toBeInstanceOf(MockDataProvider);
   });
 });

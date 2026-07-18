@@ -1,19 +1,38 @@
 import { NextResponse } from "next/server";
 import { createProvider } from "@/lib/data";
-import type { Snapshot } from "@/lib/types";
+import type { Outcome, Snapshot } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+function parseOutcome(value: string | null): Outcome | undefined {
+  if (value === "home" || value === "draw" || value === "away") return value;
+  return undefined;
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const fixtureIdRaw = searchParams.get("fixtureId");
   const marketSlugRaw = searchParams.get("marketSlug");
+  const outcomeRaw = searchParams.get("outcome");
+  const homeTeamRaw = searchParams.get("homeTeam");
+  const awayTeamRaw = searchParams.get("awayTeam");
+  const kickoffRaw = searchParams.get("kickoffUTC");
+
   const fixtureId = fixtureIdRaw !== null ? Number(fixtureIdRaw) : undefined;
   const marketSlug = marketSlugRaw !== null && marketSlugRaw !== "" ? marketSlugRaw : undefined;
-  const provider = createProvider(
-    Number.isFinite(fixtureId) ? (fixtureId as number) : undefined,
-    marketSlug,
-  );
+  const outcome = parseOutcome(outcomeRaw);
+  const homeTeam = homeTeamRaw !== null && homeTeamRaw !== "" ? homeTeamRaw : undefined;
+  const awayTeam = awayTeamRaw !== null && awayTeamRaw !== "" ? awayTeamRaw : undefined;
+  const kickoffISO = kickoffRaw !== null && kickoffRaw !== "" ? kickoffRaw : undefined;
+
+  const provider = createProvider({
+    fixtureId: Number.isFinite(fixtureId) ? (fixtureId as number) : undefined,
+    homeMarketSlug: marketSlug,
+    outcome,
+    homeTeam,
+    awayTeam,
+    kickoffISO,
+  });
 
   try {
     const snapshot = await provider.getSnapshot();
@@ -31,6 +50,10 @@ export async function GET(request: Request) {
         date: "2026-07-15",
         kickoffUTC: "2026-07-15T19:00:00Z",
         rules: "regulation-time 1X2",
+        outcome: "home",
+        outcomeLabel: "England",
+        homeTeam: "England",
+        awayTeam: "Argentina",
       },
       txline: {
         probability: null,

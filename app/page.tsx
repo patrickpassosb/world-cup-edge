@@ -3,11 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
-  CheckCircle,
   Circle,
   Clock,
   Filter,
-  Loader,
   Radio,
   RefreshCw,
   Settings,
@@ -15,7 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { DISCLAIMER_LINES, MATCH } from "@/lib/config";
-import type { MatchEntry, SessionAlert, Snapshot } from "@/lib/types";
+import type { MatchEntry, Outcome, SessionAlert, Snapshot } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -73,11 +71,12 @@ function buildExplanation(snapshot: Snapshot): string {
   const gap = snapshot.gap.gapAfterFee;
   if (gap === null) return "Gap value unavailable.";
   const pp = (gap * 100).toFixed(1);
+  const label = snapshot.match.outcomeLabel || "the selected outcome";
   if (gap > 0) {
-    return `TxLINE's consensus probability is ${pp} percentage points higher than Polymarket's best ask for the same outcome. Not an arbitrage guarantee.`;
+    return `TxLINE's consensus probability for ${label} is ${pp} percentage points higher than Polymarket's best ask. Not an arbitrage guarantee.`;
   }
   if (gap < 0) {
-    return `TxLINE's consensus probability is ${Math.abs(Number(pp)).toFixed(1)} percentage points lower than Polymarket's best ask. Not an arbitrage guarantee.`;
+    return `TxLINE's consensus probability for ${label} is ${Math.abs(Number(pp)).toFixed(1)} percentage points lower than Polymarket's best ask. Not an arbitrage guarantee.`;
   }
   return "TxLINE consensus and Polymarket best ask are aligned. No meaningful gap detected.";
 }
@@ -98,6 +97,12 @@ function formatKickoffRelative(kickoffUTC: string): string {
   const month = target.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
   const day = target.getUTCDate();
   return `${month} ${day} ${timeStr}`;
+}
+
+function getMarketSlug(match: MatchEntry, outcome: Outcome): string | null {
+  if (outcome === "home") return match.polymarketHomeMarketSlug;
+  if (outcome === "draw") return match.polymarketDrawMarketSlug;
+  return match.polymarketAwayMarketSlug;
 }
 
 interface MatchPickerSectionProps {
@@ -188,6 +193,52 @@ function MatchPickerSection({
   );
 }
 
+interface OutcomePickerSectionProps {
+  selectedMatch: MatchEntry | null;
+  outcome: Outcome;
+  onSelect: (outcome: Outcome) => void;
+}
+
+function OutcomePickerSection({ selectedMatch, outcome, onSelect }: OutcomePickerSectionProps) {
+  if (!selectedMatch) return null;
+  if (!selectedMatch.hasPolymarketMarket) return null;
+
+  const outcomes: { value: Outcome; label: string }[] = [
+    { value: "home", label: selectedMatch.homeTeam },
+    { value: "draw", label: "Draw" },
+    { value: "away", label: selectedMatch.awayTeam },
+  ];
+
+  return (
+    <div className="mb-6 flex items-center gap-2 border-b border-outline-variant pb-4">
+      <span className="mr-2 text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+        Outcome
+      </span>
+      <div className="flex gap-2">
+        {outcomes.map(({ value, label }) => {
+          const isActive = outcome === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onSelect(value)}
+              aria-label={`Select outcome: ${label}`}
+              aria-pressed={isActive}
+              className={`border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.05em] transition-colors duration-100 ${
+                isActive
+                  ? "border-primary bg-primary text-on-primary"
+                  : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [countdown, setCountdown] = useState<string>(formatCountdown(MATCH.kickoffUTC));
@@ -196,6 +247,7 @@ export default function DashboardPage() {
   const [matchesLoading, setMatchesLoading] = useState(true);
   const [matchesError, setMatchesError] = useState<string | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<MatchEntry | null>(null);
+  const [outcome, setOutcome] = useState<Outcome>("home");
   const lastDedupeKeyRef = useRef<string | null>(null);
 
   const selectedFixtureId = selectedMatch?.fixtureId ?? null;
@@ -236,20 +288,36 @@ export default function DashboardPage() {
       const raf = requestAnimationFrame(() => setSnapshot(null));
       return () => cancelAnimationFrame(raf);
     }
-    let cancelled = false;
+
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, (POLL_INTERVAL_MS * 2) + 1000);
+
+    const raf = requestAnimationFrame(() => setSnapshot(null));
     lastDedupeKeyRef.current = null;
+
+    const marketSlug = getMarketSlug(selectedMatch, outcome);
 
     const doPoll = async () => {
       try {
-        let url = "/api/snapshot?fixtureId=" + encodeURIComponent(selectedMatch.fixtureId);
-        if (selectedMatch.hasPolymarketMarket && selectedMatch.polymarketMarketSlug) {
-          url += "&marketSlug=" + encodeURIComponent(selectedMatch.polymarketMarketSlug);
-        }
-        const res = await fetch(url, { cache: "no-store" });
-        if (cancelled) return;
+        const params = new URLSearchParams();
+        params.set("fixtureId", String(selectedMatch.fixtureId));
+        if (marketSlug) params.set("marketSlug", marketSlug);
+        params.set("outcome", outcome);
+        params.set("homeTeam", selectedMatch.homeTeam);
+        params.set("awayTeam", selectedMatch.awayTeam);
+        params.set("kickoffUTC", selectedMatch.kickoffUTC);
+
+        const res = await fetch(`/api/snapshot?${params.toString()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: Snapshot = await res.json();
-        if (cancelled) return;
+        if (timedOut) return;
         setSnapshot(data);
 
         if (data.alert.active && !txlineOnly) {
@@ -267,29 +335,31 @@ export default function DashboardPage() {
             setSessionAlerts((prev) => [entry, ...prev].slice(0, 50));
           }
         }
-      } catch {
-        if (!cancelled) {
-          setSnapshot((prev) => {
-            if (prev && prev.status !== "error") {
-              return {
-                ...prev,
-                status: "error",
-                errorMessage: "Failed to reach /api/snapshot.",
-              } as Snapshot;
-            }
-            return prev;
-          });
-        }
+      } catch (err) {
+        if (timedOut || controller.signal.aborted) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setSnapshot((prev) => {
+          if (prev && prev.status !== "error") {
+            return {
+              ...prev,
+              status: "error",
+              errorMessage: "Failed to reach /api/snapshot.",
+            } as Snapshot;
+          }
+          return prev;
+        });
       }
     };
 
     doPoll();
     const interval = setInterval(doPoll, POLL_INTERVAL_MS);
     return () => {
-      cancelled = true;
+      clearTimeout(timeout);
+      cancelAnimationFrame(raf);
+      controller.abort();
       clearInterval(interval);
     };
-  }, [selectedMatch, txlineOnly]);
+  }, [selectedMatch, outcome, txlineOnly]);
 
   useEffect(() => {
     const update = () => setCountdown(formatCountdown(selectedMatch?.kickoffUTC ?? MATCH.kickoffUTC));
@@ -307,14 +377,22 @@ export default function DashboardPage() {
         <MatchPickerSection
           matches={matches}
           selectedFixtureId={selectedFixtureId}
-          onSelect={setSelectedMatch}
+          onSelect={(m) => {
+            setSelectedMatch(m);
+            setOutcome("home");
+          }}
           loading={matchesLoading}
           error={matchesError}
+        />
+        <OutcomePickerSection
+          selectedMatch={selectedMatch}
+          outcome={outcome}
+          onSelect={setOutcome}
         />
         <HeaderSection countdown={countdown} snapshot={snapshot} selectedMatch={selectedMatch} />
         <FocalPointSection snapshot={snapshot} displayState={displayState} txlineOnly={txlineOnly} />
         <TwoColumnSection snapshot={snapshot} displayState={displayState} txlineOnly={txlineOnly} />
-        <StatusBadges displayState={displayState} txlineOnly={txlineOnly} snapshot={snapshot} />
+        <StatusStrip displayState={displayState} txlineOnly={txlineOnly} snapshot={snapshot} />
         <SessionAlertsSection alerts={sessionAlerts} displayState={displayState} txlineOnly={txlineOnly} />
       </main>
       <Footer />
@@ -433,6 +511,7 @@ function FocalPointSection({
   const isUnavailable = displayState === "unavailable";
   const gapColor = isAlert ? "text-alert" : "text-primary";
   const explanation = snapshot ? buildExplanation(snapshot) : "";
+  const outcomeLabel = snapshot?.match.outcomeLabel ?? "selected outcome";
 
   return (
     <section className="border-b border-outline-variant py-12 text-center md:py-16">
@@ -443,7 +522,7 @@ function FocalPointSection({
           {formatPp(gapValue)}
         </p>
         <h2 className="mb-4 font-sans text-xs font-bold uppercase tracking-[0.2em] text-on-surface">
-          {isAlert ? "Consensus Gap Alert — England to win in regulation" : "Gross Consensus Gap — England to win in regulation"}
+          {isAlert ? `Consensus Gap Alert — ${outcomeLabel} to win in regulation` : `Gross Consensus Gap — ${outcomeLabel} to win in regulation`}
         </h2>
         <p className="mx-auto max-w-xl border-t border-on-surface pt-4 text-base leading-6 text-on-surface">
           {explanation}
@@ -497,6 +576,7 @@ function TxlineColumn({
   const delayed = snapshot?.txline.delayed ?? false;
   const checks = snapshot?.checks;
   const isStale = displayState === "stale";
+  const outcomeLabel = snapshot?.match.outcomeLabel ?? "selected outcome";
 
   if (displayState === "loading") {
     return (
@@ -531,7 +611,7 @@ function TxlineColumn({
         <span className="font-mono text-[56px] font-medium leading-none tracking-tight tabular-nums text-on-surface md:text-[64px]">
           {formatPct(probability)}
         </span>
-        <p className="mt-2 text-base text-on-surface-variant">England to win (regulation time)</p>
+        <p className="mt-2 text-base text-on-surface-variant">{outcomeLabel} to win (regulation time)</p>
       </div>
       <div className="space-y-4 border-t border-outline-variant pt-8">
         <CheckRow passed={checks?.teams ?? false} label="Teams matched" />
@@ -570,6 +650,7 @@ function PolymarketColumn({
   const gapAfterFee = snapshot?.gap.gapAfterFee ?? null;
   const isStale = displayState === "stale";
   const isUnavailable = displayState === "unavailable";
+  const outcomeLabel = snapshot?.match.outcomeLabel ?? "selected outcome";
 
   if (displayState === "loading") {
     return (
@@ -606,7 +687,7 @@ function PolymarketColumn({
             </span>
           )}
         </div>
-        <p className="mt-2 text-base text-on-surface-variant">England YES · top-of-book quote</p>
+        <p className="mt-2 text-base text-on-surface-variant">{outcomeLabel} · top-of-book quote</p>
       </div>
       <div className="mt-16 text-right">
         <span className="block font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
@@ -666,21 +747,52 @@ function CheckRow({ passed, label }: { passed: boolean; label: string }) {
   );
 }
 
-const STATUS_BADGES: {
-  state: DisplayState;
-  label: string;
-  Icon: typeof Radio;
-}[] = [
-  { state: "loading", label: "Loading", Icon: Loader },
-  { state: "live", label: "Live", Icon: Radio },
-  { state: "stale", label: "Stale", Icon: Clock },
-  { state: "no-alert", label: "No Alert", Icon: CheckCircle },
-  { state: "alert", label: "Alert", Icon: AlertTriangle },
-  { state: "unavailable", label: "Unavailable", Icon: WifiOff },
-  { state: "error", label: "Error", Icon: XCircle },
-];
+type DataFeedState = "loading" | "live" | "stale" | "unavailable" | "error";
 
-function StatusBadges({
+type GapMonitorState =
+  | "disabled"
+  | "loading"
+  | "no-alert"
+  | "sampling"
+  | "alert"
+  | "cooldown";
+
+function deriveDataFeedState(
+  displayState: DisplayState,
+  txlineOnly: boolean,
+  snapshot: Snapshot | null,
+): DataFeedState {
+  if (txlineOnly) {
+    if (snapshot === null) return "loading";
+    if (snapshot.status === "live") return "live";
+    if (snapshot.status === "stale") return "stale";
+    return "unavailable";
+  }
+  if (displayState === "loading") return "loading";
+  if (displayState === "live" || displayState === "no-alert" || displayState === "alert") {
+    return "live";
+  }
+  if (displayState === "stale") return "stale";
+  if (displayState === "unavailable") return "unavailable";
+  return "error";
+}
+
+function deriveGapMonitorState(
+  displayState: DisplayState,
+  txlineOnly: boolean,
+  snapshot: Snapshot | null,
+): GapMonitorState {
+  if (txlineOnly) return "disabled";
+  if (snapshot === null || displayState === "loading") return "loading";
+  if (displayState === "error" || displayState === "unavailable") return "no-alert";
+  const phase = snapshot.alert.phase;
+  if (phase === "ALERTING") return "alert";
+  if (phase === "SAMPLING") return "sampling";
+  if (phase === "COOLDOWN") return "cooldown";
+  return "no-alert";
+}
+
+function StatusStrip({
   displayState,
   txlineOnly,
   snapshot,
@@ -689,38 +801,53 @@ function StatusBadges({
   txlineOnly: boolean;
   snapshot: Snapshot | null;
 }) {
+  const feedState = deriveDataFeedState(displayState, txlineOnly, snapshot);
+  const monitorState = deriveGapMonitorState(displayState, txlineOnly, snapshot);
+
+  const feedStyles: Record<DataFeedState, string> = {
+    loading: "text-on-surface-variant",
+    live: "text-success",
+    stale: "text-stale",
+    unavailable: "text-stale",
+    error: "text-error",
+  };
+
+  const monitorStyles: Record<GapMonitorState, string> = {
+    disabled: "text-on-surface-variant",
+    loading: "text-on-surface-variant",
+    "no-alert": "text-on-surface",
+    sampling: "text-stale",
+    alert: "text-alert",
+    cooldown: "text-stale",
+  };
+
   return (
-    <section className="mb-12 border-y border-on-surface py-8 md:py-12">
-      <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 md:gap-x-8">
-        {STATUS_BADGES.map(({ state, label, Icon }) => {
-          let active =
-            displayState === state ||
-            (state === "live" && (displayState === "no-alert" || displayState === "alert"));
-          if (txlineOnly) {
-            if (state === "alert" || state === "unavailable") {
-              active = false;
-            } else if (state === "no-alert") {
-              active = true;
-            } else if (state === "live") {
-              active = snapshot?.status === "live";
-            } else if (state === "stale") {
-              active = snapshot?.status === "stale";
-            }
-          }
-          return (
-            <div
-              key={state}
-              className={`flex items-center font-sans text-xs font-bold uppercase tracking-[0.05em] ${
-                active
-                  ? "border-b-2 border-primary pb-1 text-primary"
-                  : "text-state-muted"
-              }`}
-            >
-              <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
-              {label}
-            </div>
-          );
-        })}
+    <section
+      className="mb-12 border-y border-outline-variant py-6"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="mx-auto flex max-w-[640px] flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-4">
+          <span className="font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+            Data feed
+          </span>
+          <span
+            className={`font-mono text-sm font-bold uppercase tracking-[0.04em] ${feedStyles[feedState]}`}
+          >
+            {feedState}
+          </span>
+        </div>
+        <div className="flex items-baseline justify-between gap-4">
+          <span className="font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+            Gap monitor
+          </span>
+          <span
+            className={`font-mono text-sm font-bold uppercase tracking-[0.04em] ${monitorStyles[monitorState]}`}
+          >
+            {monitorState}
+          </span>
+        </div>
       </div>
     </section>
   );

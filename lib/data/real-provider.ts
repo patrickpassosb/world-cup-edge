@@ -1,4 +1,4 @@
-import { CONFIG, MATCH } from "@/lib/config";
+import { CONFIG } from "@/lib/config";
 import type { DataProvider } from "@/lib/data/provider";
 import { checkEquivalence } from "@/lib/contract/equivalence";
 import {
@@ -13,7 +13,7 @@ import { normalizePolymarket } from "@/lib/polymarket/normalize";
 import { fetchOddsForMatch } from "@/lib/txline/client";
 import { normalizeTxline } from "@/lib/txline/normalize";
 import type { Fixture, OddsPayload } from "@/lib/txline/types";
-import type { Snapshot, VerificationChecks } from "@/lib/types";
+import type { Outcome, Snapshot, VerificationChecks } from "@/lib/types";
 
 function buildVerificationChecks(
   equivalencePassed: boolean,
@@ -29,19 +29,82 @@ function buildVerificationChecks(
   };
 }
 
+function deriveOutcomeLabel(outcome: Outcome, homeTeam: string, awayTeam: string): string {
+  if (outcome === "home") return homeTeam;
+  if (outcome === "away") return awayTeam;
+  return "Draw";
+}
+
 export class RealDataProvider implements DataProvider {
   private fixtureId: number;
-  private marketSlug: string;
   private eventSlug: string;
+  private homeMarketSlug: string;
+  private drawMarketSlug: string;
+  private awayMarketSlug: string;
+  private outcome: Outcome;
+  private homeTeam: string;
+  private awayTeam: string;
+  private kickoffISO: string;
   private previousPhase: AlertPhase = "IDLE";
   private previousConsecutiveSamples = 0;
   private lastAlertTime: number | null = null;
   private lastDedupeKey: string | null = null;
 
-  constructor(fixtureId?: number, marketSlug?: string) {
+  constructor(
+    fixtureId?: number,
+    homeMarketSlug?: string,
+    outcome?: Outcome,
+    homeTeam?: string,
+    awayTeam?: string,
+    kickoffISO?: string,
+  ) {
     this.fixtureId = fixtureId ?? CONFIG.txline.fixtureId;
-    this.marketSlug = marketSlug ?? CONFIG.polymarket.marketSlug;
-    this.eventSlug = this.marketSlug.replace(/-(eng|draw|arg)$/, "") || CONFIG.polymarket.eventSlug;
+    this.homeMarketSlug = homeMarketSlug ?? CONFIG.polymarket.marketSlug;
+    this.eventSlug = this.homeMarketSlug.replace(/-(eng|draw|arg)$/, "") || CONFIG.polymarket.eventSlug;
+    this.drawMarketSlug = `${this.eventSlug}-draw`;
+    this.awayMarketSlug = `${this.eventSlug}-away`;
+    this.outcome = outcome ?? "home";
+    this.homeTeam = homeTeam ?? "";
+    this.awayTeam = awayTeam ?? "";
+    this.kickoffISO = kickoffISO ?? "";
+  }
+
+  private getActiveMarketSlug(): string {
+    if (this.outcome === "home") return this.homeMarketSlug;
+    if (this.outcome === "draw") return this.drawMarketSlug;
+    return this.awayMarketSlug;
+  }
+
+  private buildMatchMetadata(fixture: Fixture | null): {
+    name: string;
+    date: string;
+    kickoffUTC: string;
+    rules: string;
+    outcome: Outcome;
+    outcomeLabel: string;
+    homeTeam: string;
+    awayTeam: string;
+  } {
+    const home = fixture
+      ? fixture.participant1IsHome ? fixture.participant1 : fixture.participant2
+      : this.homeTeam;
+    const away = fixture
+      ? fixture.participant1IsHome ? fixture.participant2 : fixture.participant1
+      : this.awayTeam;
+    const kickoff = fixture?.startTime ?? this.kickoffISO;
+    const kickoffUTC = kickoff ? new Date(Number(kickoff) || Date.parse(kickoff)).toISOString() : "";
+    const date = kickoffUTC ? kickoffUTC.slice(0, 10) : "";
+    const outcomeLabel = deriveOutcomeLabel(this.outcome, home, away);
+    return {
+      name: `${home} vs ${away}`,
+      date,
+      kickoffUTC,
+      rules: "regulation-time 1X2",
+      outcome: this.outcome,
+      outcomeLabel,
+      homeTeam: home,
+      awayTeam: away,
+    };
   }
 
   async getSnapshot(): Promise<Snapshot> {
@@ -51,7 +114,7 @@ export class RealDataProvider implements DataProvider {
       fetchOddsForMatch(this.fixtureId).catch((e) => {
         return { error: e instanceof Error ? e.message : String(e) };
       }),
-      fetchPolymarketData(this.eventSlug, this.marketSlug).catch((e) => {
+      fetchPolymarketData(this.eventSlug, this.getActiveMarketSlug()).catch((e) => {
         return { error: e instanceof Error ? e.message : String(e) };
       }),
     ]);
@@ -61,6 +124,8 @@ export class RealDataProvider implements DataProvider {
     const txlineErr = txlineErrored ? (txlineResult as { error: string }).error : null;
     const polyErr = polyErrored ? (polyResult as { error: string }).error : null;
 
+    const txlineData = txlineErrored ? null : (txlineResult as { fixture: Fixture | null; odds: OddsPayload[] });
+
     if (txlineErrored && polyErrored) {
       return this.buildErrorSnapshot(
         `TxLINE: ${txlineErr}; Polymarket: ${polyErr}`,
@@ -68,19 +133,19 @@ export class RealDataProvider implements DataProvider {
       );
     }
 
-    const txlineData = txlineErrored ? null : (txlineResult as { fixture: Fixture | null; odds: OddsPayload[] });
-    const polyData = polyErrored ? null : (polyResult as PolymarketFetchResult);
-
     if (txlineData === null) {
-      return this.buildTxlineUnavailableSnapshot(polyData, txlineErr, now);
+      return this.buildTxlineUnavailableSnapshot(polyErrored ? null : (polyResult as PolymarketFetchResult), txlineErr, now);
     }
 
     const normalizedTxline = normalizeTxline(
       txlineData.fixture,
       txlineData.odds,
       now,
+      CONFIG.txline.serviceLevel,
+      this.outcome,
     );
 
+    const polyData = polyErrored ? null : (polyResult as PolymarketFetchResult);
     const poly = polyData ?? { event: null, market: null, book: null, yesTokenId: null };
 
     const normalizedPoly = normalizePolymarket(
@@ -90,6 +155,8 @@ export class RealDataProvider implements DataProvider {
       poly.yesTokenId,
       now,
     );
+
+    const matchMeta = this.buildMatchMetadata(txlineData.fixture);
 
     const equivalence = checkEquivalence({
       txlineHomeTeam: normalizedTxline.homeTeam,
@@ -105,6 +172,10 @@ export class RealDataProvider implements DataProvider {
       marketActive: normalizedPoly.marketActive,
       marketClosed: normalizedPoly.marketClosed,
       acceptingOrders: normalizedPoly.acceptingOrders,
+      outcome: this.outcome,
+      expectedHomeTeam: matchMeta.homeTeam,
+      expectedAwayTeam: matchMeta.awayTeam,
+      expectedDate: matchMeta.date || null,
     });
 
     const grossGap = computeGrossGap(normalizedTxline.probability, normalizedPoly.bestAsk);
@@ -154,10 +225,14 @@ export class RealDataProvider implements DataProvider {
       status,
       alertKind: alertEval.alert.active ? "alert" : "no-alert",
       match: {
-        name: MATCH.matchName,
-        date: MATCH.matchDate,
-        kickoffUTC: MATCH.kickoffUTC,
-        rules: MATCH.rules,
+        name: matchMeta.name,
+        date: matchMeta.date,
+        kickoffUTC: matchMeta.kickoffUTC,
+        rules: matchMeta.rules,
+        outcome: matchMeta.outcome,
+        outcomeLabel: matchMeta.outcomeLabel,
+        homeTeam: matchMeta.homeTeam,
+        awayTeam: matchMeta.awayTeam,
       },
       txline: {
         probability: normalizedTxline.probability,
@@ -210,6 +285,31 @@ export class RealDataProvider implements DataProvider {
     return "live";
   }
 
+  private buildMatchMetadataForError(): {
+    name: string;
+    date: string;
+    kickoffUTC: string;
+    rules: string;
+    outcome: Outcome;
+    outcomeLabel: string;
+    homeTeam: string;
+    awayTeam: string;
+  } {
+    const home = this.homeTeam || "Unknown";
+    const away = this.awayTeam || "Unknown";
+    const outcomeLabel = deriveOutcomeLabel(this.outcome, home, away);
+    return {
+      name: `${home} vs ${away}`,
+      date: this.kickoffISO ? this.kickoffISO.slice(0, 10) : "",
+      kickoffUTC: this.kickoffISO,
+      rules: "regulation-time 1X2",
+      outcome: this.outcome,
+      outcomeLabel,
+      homeTeam: home,
+      awayTeam: away,
+    };
+  }
+
   private buildTxlineUnavailableSnapshot(
     polyData: PolymarketFetchResult | null,
     txlineErr: string | null,
@@ -223,15 +323,20 @@ export class RealDataProvider implements DataProvider {
       poly.yesTokenId,
       now,
     );
+    const matchMeta = this.buildMatchMetadataForError();
 
     return {
       status: "unavailable",
       alertKind: "no-alert",
       match: {
-        name: MATCH.matchName,
-        date: MATCH.matchDate,
-        kickoffUTC: MATCH.kickoffUTC,
-        rules: MATCH.rules,
+        name: matchMeta.name,
+        date: matchMeta.date,
+        kickoffUTC: matchMeta.kickoffUTC,
+        rules: matchMeta.rules,
+        outcome: matchMeta.outcome,
+        outcomeLabel: matchMeta.outcomeLabel,
+        homeTeam: matchMeta.homeTeam,
+        awayTeam: matchMeta.awayTeam,
       },
       txline: {
         probability: null,
@@ -289,14 +394,19 @@ export class RealDataProvider implements DataProvider {
   }
 
   private buildErrorSnapshot(message: string, now: number): Snapshot {
+    const matchMeta = this.buildMatchMetadataForError();
     return {
       status: "error",
       alertKind: "no-alert",
       match: {
-        name: MATCH.matchName,
-        date: MATCH.matchDate,
-        kickoffUTC: MATCH.kickoffUTC,
-        rules: MATCH.rules,
+        name: matchMeta.name,
+        date: matchMeta.date,
+        kickoffUTC: matchMeta.kickoffUTC,
+        rules: matchMeta.rules,
+        outcome: matchMeta.outcome,
+        outcomeLabel: matchMeta.outcomeLabel,
+        homeTeam: matchMeta.homeTeam,
+        awayTeam: matchMeta.awayTeam,
       },
       txline: {
         probability: null,

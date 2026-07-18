@@ -15,10 +15,17 @@ export async function fetchAvailableMatches(): Promise<MatchEntry[]> {
   const enriched = await Promise.all(
     worldCup.map(async (fixture: Fixture) => {
       const startMs = Number(fixture.startTime);
-      const polyMatch = await findPolymarketMatchForTeams(
-        fixture.participant1IsHome ? fixture.participant1 : fixture.participant2,
-        fixture.participant1IsHome ? fixture.participant2 : fixture.participant1,
-      );
+      if (!Number.isFinite(startMs)) {
+        return { fixture, startMs, polyMatch: null };
+      }
+      const home = fixture.participant1IsHome
+        ? fixture.participant1
+        : fixture.participant2;
+      const away = fixture.participant1IsHome
+        ? fixture.participant2
+        : fixture.participant1;
+      const kickoffISO = new Date(startMs).toISOString();
+      const polyMatch = await findPolymarketMatchForTeams(home, away, kickoffISO);
       return { fixture, startMs, polyMatch };
     }),
   );
@@ -40,7 +47,9 @@ export async function fetchAvailableMatches(): Promise<MatchEntry[]> {
       competition: fixture.competition,
       gameState: fixture.gameState,
       polymarketEventSlug: polyMatch?.eventSlug ?? null,
-      polymarketMarketSlug: polyMatch?.marketSlug ?? null,
+      polymarketHomeMarketSlug: polyMatch?.homeMarketSlug ?? null,
+      polymarketDrawMarketSlug: polyMatch?.drawMarketSlug ?? null,
+      polymarketAwayMarketSlug: polyMatch?.awayMarketSlug ?? null,
       hasPolymarketMarket: polyMatch !== null,
     });
   }

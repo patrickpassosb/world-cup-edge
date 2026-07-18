@@ -15,6 +15,10 @@ const VALID_INPUT = {
   marketActive: true,
   marketClosed: false,
   acceptingOrders: true,
+  outcome: "home" as const,
+  expectedHomeTeam: "England",
+  expectedAwayTeam: "France",
+  expectedDate: "2026-07-16",
 };
 
 describe("checkEquivalence team matching", () => {
@@ -48,10 +52,25 @@ describe("checkEquivalence team matching", () => {
     });
     expect(result.checks.teams).toBe(true);
   });
+
+  it("passes when expected teams are Spain and Argentina", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineHomeTeam: "Spain",
+      txlineAwayTeam: "Argentina",
+      polymarketHomeTeam: "Spain",
+      polymarketAwayTeam: "Argentina",
+      expectedHomeTeam: "Spain",
+      expectedAwayTeam: "Argentina",
+      selectedTokenLabel: "Spain YES",
+      polymarketResolutionWording: "Spain to win in the first 90 minutes plus stoppage time (excludes extra time)",
+    });
+    expect(result.checks.teams).toBe(true);
+  });
 });
 
 describe("checkEquivalence date matching", () => {
-  it("passes when dates match July 15 2026", () => {
+  it("passes when dates match across sources", () => {
     const result = checkEquivalence(VALID_INPUT);
     expect(result.checks.date).toBe(true);
   });
@@ -70,6 +89,16 @@ describe("checkEquivalence date matching", () => {
       polymarketMatchDate: null,
     });
     expect(result.checks.date).toBe(false);
+  });
+
+  it("passes when expected date changes and all sources match", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineMatchDate: "2026-07-19",
+      polymarketMatchDate: "2026-07-19",
+      expectedDate: "2026-07-19",
+    });
+    expect(result.checks.date).toBe(true);
   });
 });
 
@@ -105,8 +134,28 @@ describe("checkEquivalence market type matching", () => {
 });
 
 describe("checkEquivalence token matching", () => {
-  it("passes for England YES label", () => {
+  it("passes for home outcome with home team YES label", () => {
     const result = checkEquivalence(VALID_INPUT);
+    expect(result.checks.token).toBe(true);
+  });
+
+  it("passes for away outcome with away team YES label", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      outcome: "away" as const,
+      selectedTokenLabel: "France YES",
+      polymarketResolutionWording: "France to win in the first 90 minutes plus stoppage time (excludes extra time)",
+    });
+    expect(result.checks.token).toBe(true);
+  });
+
+  it("passes for draw outcome with Yes label", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      outcome: "draw" as const,
+      selectedTokenLabel: "Yes",
+      polymarketResolutionWording: "England vs France to end in a draw in the first 90 minutes plus stoppage time (excludes extra time)",
+    });
     expect(result.checks.token).toBe(true);
   });
 
@@ -122,6 +171,14 @@ describe("checkEquivalence token matching", () => {
     const result = checkEquivalence({
       ...VALID_INPUT,
       selectedTokenLabel: null,
+    });
+    expect(result.checks.token).toBe(false);
+  });
+
+  it("fails when home outcome label does not match expected team", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      selectedTokenLabel: "France YES",
     });
     expect(result.checks.token).toBe(false);
   });
@@ -164,5 +221,23 @@ describe("checkEquivalence overall", () => {
     });
     expect(result.passed).toBe(false);
     expect(result.failures.length).toBeGreaterThan(0);
+  });
+
+  it("passes for Spain vs Argentina with correct outcome", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineHomeTeam: "Spain",
+      txlineAwayTeam: "Argentina",
+      polymarketHomeTeam: "Spain",
+      polymarketAwayTeam: "Argentina",
+      txlineMatchDate: "2026-07-19",
+      polymarketMatchDate: "2026-07-19",
+      expectedHomeTeam: "Spain",
+      expectedAwayTeam: "Argentina",
+      expectedDate: "2026-07-19",
+      selectedTokenLabel: "Spain YES",
+      polymarketResolutionWording: "Spain to win in the first 90 minutes plus stoppage time (excludes extra time)",
+    });
+    expect(result.passed).toBe(true);
   });
 });

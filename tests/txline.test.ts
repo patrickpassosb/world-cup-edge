@@ -4,7 +4,7 @@ import {
   arraysEqualLength,
   hasDuplicateLabels,
   isRegulationTime1X2,
-  findEnglandProbability,
+  findOutcomeProbability,
   validateDistribution,
   selectRegulationTimeRow,
   extractTeams,
@@ -24,7 +24,7 @@ function makeOdds(overrides: Partial<OddsPayload> = {}): OddsPayload {
     inRunning: false,
     marketParameters: null,
     marketPeriod: "regulation",
-    priceNames: ["England", "Draw", "Argentina"],
+    priceNames: ["part1", "draw", "part2"],
     prices: ["2.10", "3.20", "3.50"],
     pct: ["47.000", "28.000", "25.000"],
     ...overrides,
@@ -91,15 +91,15 @@ describe("arraysEqualLength", () => {
 
 describe("hasDuplicateLabels", () => {
   it("returns true for duplicate labels", () => {
-    expect(hasDuplicateLabels(["England", "Draw", "England"])).toBe(true);
+    expect(hasDuplicateLabels(["part1", "draw", "part1"])).toBe(true);
   });
 
   it("returns false for unique labels", () => {
-    expect(hasDuplicateLabels(["England", "Draw", "Argentina"])).toBe(false);
+    expect(hasDuplicateLabels(["part1", "draw", "part2"])).toBe(false);
   });
 
   it("is case-insensitive", () => {
-    expect(hasDuplicateLabels(["england", "Draw", "England"])).toBe(true);
+    expect(hasDuplicateLabels(["part1", "draw", "Part1"])).toBe(true);
   });
 });
 
@@ -133,54 +133,68 @@ describe("isRegulationTime1X2", () => {
   });
 });
 
-describe("findEnglandProbability", () => {
-  it("finds England probability at position 0", () => {
-    const result = findEnglandProbability(makeOdds());
+describe("findOutcomeProbability", () => {
+  it("finds home (part1) probability at position 0", () => {
+    const result = findOutcomeProbability(makeOdds(), "home");
     expect(result).not.toBeNull();
     expect(result!.probability).toBeCloseTo(0.47);
     expect(result!.position).toBe(0);
   });
 
-  it("finds England at position 2", () => {
-    const result = findEnglandProbability(
-      makeOdds({
-        priceNames: ["Argentina", "Draw", "England"],
-        pct: ["25.000", "28.000", "47.000"],
-      }),
-    );
+  it("finds draw probability at position 1", () => {
+    const result = findOutcomeProbability(makeOdds(), "draw");
     expect(result).not.toBeNull();
-    expect(result!.position).toBe(2);
-    expect(result!.probability).toBeCloseTo(0.47);
+    expect(result!.probability).toBeCloseTo(0.28);
+    expect(result!.position).toBe(1);
   });
 
-  it("returns null when England not found", () => {
-    const result = findEnglandProbability(
+  it("finds away (part2) probability at position 2", () => {
+    const result = findOutcomeProbability(makeOdds(), "away");
+    expect(result).not.toBeNull();
+    expect(result!.probability).toBeCloseTo(0.25);
+    expect(result!.position).toBe(2);
+  });
+
+  it("returns null when home not found in non-generic labels", () => {
+    const result = findOutcomeProbability(
       makeOdds({ priceNames: ["Brazil", "Draw", "Germany"] }),
+      "home",
+    );
+    expect(result).toBeNull();
+  });
+
+  it("returns null when draw not found", () => {
+    const result = findOutcomeProbability(
+      makeOdds({ priceNames: ["part1", "nope", "part2"] }),
+      "draw",
     );
     expect(result).toBeNull();
   });
 
   it("returns null when Pct is NA", () => {
-    const result = findEnglandProbability(
+    const result = findOutcomeProbability(
       makeOdds({ pct: ["NA", "28.000", "25.000"] }),
+      "home",
     );
     expect(result).toBeNull();
   });
 
   it("returns null when arrays have unequal lengths", () => {
-    const result = findEnglandProbability(
+    const result = findOutcomeProbability(
       makeOdds({
-        priceNames: ["England", "Draw"],
+        priceNames: ["part1", "draw"],
         prices: ["1", "2", "3"],
         pct: ["47", "28", "25"],
       }),
+      "home",
     );
     expect(result).toBeNull();
   });
 
   it("returns null when duplicate labels exist", () => {
-    const result = findEnglandProbability(
-      makeOdds({ priceNames: ["England", "England", "Argentina"] }),
+    const result = findOutcomeProbability(
+      makeOdds({ priceNames: ["part1", "part1", "part2"] }),
+      "home",
     );
     expect(result).toBeNull();
   });

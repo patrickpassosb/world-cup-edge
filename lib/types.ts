@@ -4,11 +4,17 @@ export type AlertKind = "no-alert" | "alert";
 
 export type AlertPhase = "IDLE" | "SAMPLING" | "ALERTING" | "COOLDOWN";
 
+export type Outcome = "home" | "draw" | "away";
+
 export interface MatchInfo {
   name: string;
   date: string;
   kickoffUTC: string;
   rules: string;
+  outcome: Outcome;
+  outcomeLabel: string;
+  homeTeam: string;
+  awayTeam: string;
 }
 
 export interface TxlineData {
@@ -108,6 +114,8 @@ export interface MatchEntry {
   competition: string;
   gameState: number;
   polymarketEventSlug: string | null;
-  polymarketMarketSlug: string | null;
+  polymarketHomeMarketSlug: string | null;
+  polymarketDrawMarketSlug: string | null;
+  polymarketAwayMarketSlug: string | null;
   hasPolymarketMarket: boolean;
 }

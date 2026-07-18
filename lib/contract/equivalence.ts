@@ -1,5 +1,4 @@
-import { CONFIG, MATCH } from "@/lib/config";
-import type { EquivalenceResult } from "@/lib/types";
+import type { EquivalenceResult, Outcome } from "@/lib/types";
 
 export interface EquivalenceInput {
   txlineHomeTeam: string | null;
@@ -15,6 +14,10 @@ export interface EquivalenceInput {
   marketActive: boolean;
   marketClosed: boolean;
   acceptingOrders: boolean;
+  outcome: Outcome;
+  expectedHomeTeam: string | null;
+  expectedAwayTeam: string | null;
+  expectedDate: string | null;
 }
 
 function normalizeTeam(name: string | null): string {
@@ -58,10 +61,16 @@ function resolutionConfirmsRegulation(wording: string | null): boolean {
   return hasRegulation && excludesExtraTime;
 }
 
-function tokenIsEnglandYes(label: string | null): boolean {
+function tokenMatchesOutcome(label: string | null, outcome: Outcome, expectedTeam: string | null): boolean {
   if (label === null) return false;
   const l = label.toLowerCase();
-  return (l.includes("england") || l.includes("yes")) && !l.includes("no");
+  if (l.includes("no")) return false;
+  if (outcome === "draw") {
+    return l.includes("draw") || l === "yes";
+  }
+  if (expectedTeam === null) return false;
+  const team = expectedTeam.toLowerCase();
+  return l.includes(team);
 }
 
 export function checkEquivalence(input: EquivalenceInput): EquivalenceResult {
@@ -75,19 +84,19 @@ export function checkEquivalence(input: EquivalenceInput): EquivalenceResult {
   const failures: string[] = [];
 
   const homeMatch = teamsMatch(input.txlineHomeTeam, input.polymarketHomeTeam) &&
-    teamsMatch(input.txlineHomeTeam, MATCH.homeTeam);
+    teamsMatch(input.txlineHomeTeam, input.expectedHomeTeam);
   const awayMatch = teamsMatch(input.txlineAwayTeam, input.polymarketAwayTeam) &&
-    teamsMatch(input.txlineAwayTeam, MATCH.awayTeam);
+    teamsMatch(input.txlineAwayTeam, input.expectedAwayTeam);
   checks.teams = homeMatch && awayMatch;
   if (!checks.teams) {
     failures.push("Teams do not match across sources.");
   }
 
-  const txlineDateOk = datesMatch(input.txlineMatchDate, MATCH.matchDate);
-  const polyDateOk = datesMatch(input.polymarketMatchDate, MATCH.matchDate);
+  const txlineDateOk = datesMatch(input.txlineMatchDate, input.expectedDate);
+  const polyDateOk = datesMatch(input.polymarketMatchDate, input.expectedDate);
   checks.date = txlineDateOk && polyDateOk;
   if (!checks.date) {
-    failures.push("Match date does not match July 15, 2026.");
+    failures.push("Match date does not align across sources.");
   }
 
   const txlineRulesOk = isRegulationTime1X2(input.txlineMarketType, input.txlineMarketPeriod);
@@ -97,9 +106,12 @@ export function checkEquivalence(input: EquivalenceInput): EquivalenceResult {
     failures.push("Market rules do not confirm regulation-time 1X2.");
   }
 
-  checks.token = tokenIsEnglandYes(input.selectedTokenLabel);
+  const expectedTeam = input.outcome === "home" ? input.expectedHomeTeam
+    : input.outcome === "away" ? input.expectedAwayTeam
+    : null;
+  checks.token = tokenMatchesOutcome(input.selectedTokenLabel, input.outcome, expectedTeam);
   if (!checks.token) {
-    failures.push("Selected token does not correspond to England YES outcome.");
+    failures.push("Selected token does not correspond to the selected outcome.");
   }
 
   checks.marketState =
@@ -114,5 +126,3 @@ export function checkEquivalence(input: EquivalenceInput): EquivalenceResult {
     failures,
   };
 }
-
-export { CONFIG };

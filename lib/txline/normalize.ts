@@ -1,5 +1,6 @@
 import { CONFIG } from "@/lib/config";
 import type { Fixture, NormalizedTxline, OddsPayload } from "@/lib/txline/types";
+import type { Outcome } from "@/lib/types";
 
 export function pctToProbability(pct: string): number | null {
   if (!pct || pct === "NA" || pct === "na" || pct === "") return null;
@@ -48,31 +49,34 @@ export function isRegulationTime1X2(
   return mp.includes("regulation") || mp.includes("full time") || mp.includes("fulltime") || mp.includes("ft") || mp.includes("90") || mp.includes("regular") || mp === "";
 }
 
-export function findEnglandProbability(
+export function findOutcomeProbability(
   odds: OddsPayload,
-  expectedTeam: string = "England",
+  outcome: Outcome,
 ): { probability: number; position: number } | null {
   if (!odds.priceNames || !odds.pct) return null;
   if (!arraysEqualLength(odds.priceNames, odds.prices ?? [], odds.pct)) return null;
   if (hasDuplicateLabels(odds.priceNames)) return null;
 
-  const target = expectedTeam.toLowerCase();
+  const target = outcome === "draw" ? "draw" : "part";
   for (let i = 0; i < odds.priceNames.length; i++) {
     const label = odds.priceNames[i].toLowerCase();
-    if (label.includes(target)) {
+    if (outcome === "draw" && label === "draw") {
+      const prob = pctToProbability(odds.pct[i]);
+      if (prob === null) return null;
+      return { probability: prob, position: i };
+    }
+    if (outcome === "home" && label === "part1") {
+      const prob = pctToProbability(odds.pct[i]);
+      if (prob === null) return null;
+      return { probability: prob, position: i };
+    }
+    if (outcome === "away" && label === "part2") {
       const prob = pctToProbability(odds.pct[i]);
       if (prob === null) return null;
       return { probability: prob, position: i };
     }
   }
-  if (target === "england") {
-    const part1Idx = odds.priceNames.findIndex((l) => l.toLowerCase() === "part1");
-    if (part1Idx >= 0) {
-      const prob = pctToProbability(odds.pct[part1Idx]);
-      if (prob === null) return null;
-      return { probability: prob, position: part1Idx };
-    }
-  }
+  void target;
   return null;
 }
 
@@ -126,9 +130,10 @@ export function normalizeTxline(
   odds: OddsPayload[],
   receivedAt: number = Date.now(),
   serviceLevel: number = CONFIG.txline.serviceLevel,
+  outcome: Outcome = "home",
 ): NormalizedTxline {
   const regRow = selectRegulationTimeRow(odds);
-  const englandResult = regRow ? findEnglandProbability(regRow) : null;
+  const outcomeResult = regRow ? findOutcomeProbability(regRow, outcome) : null;
   const teams = extractTeams(fixture);
   const matchDate = extractFixtureDate(fixture);
 
@@ -137,7 +142,7 @@ export function normalizeTxline(
     timestamp !== null && receivedAt - timestamp <= CONFIG.txline.maxAgeMs;
 
   return {
-    probability: englandResult?.probability ?? null,
+    probability: outcomeResult?.probability ?? null,
     messageId: regRow?.messageId ?? null,
     timestamp,
     receivedAt,

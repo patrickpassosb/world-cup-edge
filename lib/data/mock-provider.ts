@@ -2,7 +2,7 @@ import { CONFIG, MATCH } from "@/lib/config";
 import type { DataProvider } from "@/lib/data/provider";
 import { checkEquivalence } from "@/lib/contract/equivalence";
 import { computeGapAfterFee, computeGrossGap, computeFeePerShare, evaluateAlert } from "@/lib/gap/engine";
-import type { AlertPhase, EquivalenceResult, Snapshot, VerificationChecks } from "@/lib/types";
+import type { AlertPhase, EquivalenceResult, Outcome, Snapshot, VerificationChecks } from "@/lib/types";
 
 export type MockScenario =
   | "live"
@@ -14,24 +14,78 @@ export type MockScenario =
 
 const SAMPLE_NOW = 1752620400000;
 
-const EQUIVALENCE_INPUT = {
-  txlineHomeTeam: MATCH.homeTeam,
-  txlineAwayTeam: MATCH.awayTeam,
-  txlineMatchDate: MATCH.matchDate,
-  txlineMarketType: "1X2",
-  txlineMarketPeriod: "regulation",
-  polymarketHomeTeam: MATCH.homeTeam,
-  polymarketAwayTeam: MATCH.awayTeam,
-  polymarketMatchDate: MATCH.matchDate,
-  polymarketResolutionWording: "England to win in the first 90 minutes plus stoppage time (excludes extra time)",
-  selectedTokenLabel: "England YES",
-  marketActive: true,
-  marketClosed: false,
-  acceptingOrders: true,
+const OUTCOME_LABELS: Record<Outcome, string> = {
+  home: "England",
+  draw: "Draw",
+  away: "France",
 };
 
-function buildVerificationChecks(): VerificationChecks {
-  const eq = checkEquivalence(EQUIVALENCE_INPUT);
+const OUTCOME_PROBABILITY: Record<Outcome, number> = {
+  home: 0.548,
+  draw: 0.28,
+  away: 0.25,
+};
+
+const OUTCOME_BEST_ASK: Record<Outcome, number> = {
+  home: 0.506,
+  draw: 0.27,
+  away: 0.24,
+};
+
+const OUTCOME_BEST_BID: Record<Outcome, number> = {
+  home: 0.498,
+  draw: 0.26,
+  away: 0.23,
+};
+
+const OUTCOME_TOKEN_ID: Record<Outcome, string> = {
+  home: "token-yes-eng-001",
+  draw: "token-yes-draw-001",
+  away: "token-yes-fra-001",
+};
+
+const OUTCOME_MESSAGE_ID: Record<Outcome, string> = {
+  home: "msg-001",
+  draw: "msg-draw-001",
+  away: "msg-away-001",
+};
+
+const OUTCOME_LABEL_FOR_TOKEN: Record<Outcome, string> = {
+  home: "England YES",
+  draw: "Yes",
+  away: "France YES",
+};
+
+const OUTCOME_RESOLUTION_WORDING: Record<Outcome, string> = {
+  home: "England to win in the first 90 minutes plus stoppage time (excludes extra time)",
+  draw: "England vs France to end in a draw in the first 90 minutes plus stoppage time (excludes extra time)",
+  away: "France to win in the first 90 minutes plus stoppage time (excludes extra time)",
+};
+
+function buildEquivalenceInput(outcome: Outcome) {
+  return {
+    txlineHomeTeam: MATCH.homeTeam,
+    txlineAwayTeam: MATCH.awayTeam,
+    txlineMatchDate: MATCH.matchDate,
+    txlineMarketType: "1X2",
+    txlineMarketPeriod: "regulation",
+    polymarketHomeTeam: MATCH.homeTeam,
+    polymarketAwayTeam: MATCH.awayTeam,
+    polymarketMatchDate: MATCH.matchDate,
+    polymarketResolutionWording: OUTCOME_RESOLUTION_WORDING[outcome],
+    selectedTokenLabel: OUTCOME_LABEL_FOR_TOKEN[outcome],
+    marketActive: true,
+    marketClosed: false,
+    acceptingOrders: true,
+    outcome,
+    expectedHomeTeam: MATCH.homeTeam,
+    expectedAwayTeam: MATCH.awayTeam,
+    expectedDate: MATCH.matchDate,
+  };
+}
+
+function buildVerificationChecks(outcome: Outcome): VerificationChecks {
+  const eq = checkEquivalence(buildEquivalenceInput(outcome));
   return {
     teams: eq.checks.teams,
     date: eq.checks.date,
@@ -47,10 +101,11 @@ function buildDedupeKey(messageId: string | null, bookHash: string | null): stri
   return `${messageId ?? "none"}::${bookHash ?? "none"}`;
 }
 
-function makeBaseSnapshot(): Snapshot {
+function makeBaseSnapshot(outcome: Outcome = "home"): Snapshot {
   const now = SAMPLE_NOW;
-  const equivalence: EquivalenceResult = checkEquivalence(EQUIVALENCE_INPUT);
-  const checks = buildVerificationChecks();
+  const equivalence: EquivalenceResult = checkEquivalence(buildEquivalenceInput(outcome));
+  const checks = buildVerificationChecks(outcome);
+  const outcomeLabel = OUTCOME_LABELS[outcome];
 
   return {
     status: "live",
@@ -60,6 +115,10 @@ function makeBaseSnapshot(): Snapshot {
       date: MATCH.matchDate,
       kickoffUTC: MATCH.kickoffUTC,
       rules: MATCH.rules,
+      outcome,
+      outcomeLabel,
+      homeTeam: MATCH.homeTeam,
+      awayTeam: MATCH.awayTeam,
     },
     txline: {
       probability: null,
@@ -109,12 +168,13 @@ function makeBaseSnapshot(): Snapshot {
   };
 }
 
-function buildLiveSnapshot(gapAfterFeeOverride?: number): Snapshot {
+function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: number): Snapshot {
   const now = SAMPLE_NOW;
-  const snapshot = makeBaseSnapshot();
+  const snapshot = makeBaseSnapshot(outcome);
 
-  const txlineProbability = 0.548;
-  const bestAsk = 0.506;
+  const txlineProbability = OUTCOME_PROBABILITY[outcome];
+  const bestAsk = OUTCOME_BEST_ASK[outcome];
+  const bestBid = OUTCOME_BEST_BID[outcome];
   const feeRate = 0.05;
   const txlineTimestamp = now - 11_000;
   const polymarketTimestamp = now - 4_000;
@@ -128,7 +188,7 @@ function buildLiveSnapshot(gapAfterFeeOverride?: number): Snapshot {
 
   snapshot.txline = {
     probability: txlineProbability,
-    messageId: "msg-001",
+    messageId: OUTCOME_MESSAGE_ID[outcome],
     timestamp: txlineTimestamp,
     receivedAt: now,
     fresh: now - txlineTimestamp <= CONFIG.txline.maxAgeMs,
@@ -138,7 +198,7 @@ function buildLiveSnapshot(gapAfterFeeOverride?: number): Snapshot {
 
   snapshot.polymarket = {
     bestAsk,
-    bestBid: 0.498,
+    bestBid,
     askSize: 500,
     feeRate,
     bookSeq: 1001,
@@ -149,7 +209,7 @@ function buildLiveSnapshot(gapAfterFeeOverride?: number): Snapshot {
     marketClosed: false,
     acceptingOrders: true,
     bookEmpty: false,
-    yesTokenId: "token-yes-eng-001",
+    yesTokenId: OUTCOME_TOKEN_ID[outcome],
   };
 
   snapshot.gap = {
@@ -187,10 +247,13 @@ function buildLiveSnapshot(gapAfterFeeOverride?: number): Snapshot {
   return snapshot;
 }
 
-function buildAlertSnapshot(): Snapshot {
+function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
   const now = SAMPLE_NOW;
-  const txlineProbability = 0.571;
-  const bestAsk = 0.499;
+  const snapshot = makeBaseSnapshot(outcome);
+
+  const txlineProbability = OUTCOME_PROBABILITY[outcome] + 0.023;
+  const bestAsk = OUTCOME_BEST_ASK[outcome] - 0.007;
+  const bestBid = OUTCOME_BEST_BID[outcome] - 0.008;
   const feeRate = 0.05;
   const txlineTimestamp = now - 5_000;
   const polymarketTimestamp = now - 2_000;
@@ -199,11 +262,9 @@ function buildAlertSnapshot(): Snapshot {
   const feePerShare = computeFeePerShare(feeRate, bestAsk);
   const gapAfterFee = computeGapAfterFee(grossGap, feePerShare);
 
-  const snapshot = makeBaseSnapshot();
-
   snapshot.txline = {
     probability: txlineProbability,
-    messageId: "msg-alert-001",
+    messageId: `${OUTCOME_MESSAGE_ID[outcome]}-alert`,
     timestamp: txlineTimestamp,
     receivedAt: now,
     fresh: true,
@@ -213,7 +274,7 @@ function buildAlertSnapshot(): Snapshot {
 
   snapshot.polymarket = {
     bestAsk,
-    bestBid: 0.491,
+    bestBid,
     askSize: 300,
     feeRate,
     bookSeq: 2042,
@@ -224,7 +285,7 @@ function buildAlertSnapshot(): Snapshot {
     marketClosed: false,
     acceptingOrders: true,
     bookEmpty: false,
-    yesTokenId: "token-yes-eng-001",
+    yesTokenId: OUTCOME_TOKEN_ID[outcome],
   };
 
   snapshot.gap = {
@@ -262,17 +323,17 @@ function buildAlertSnapshot(): Snapshot {
   return snapshot;
 }
 
-function buildStaleSnapshot(): Snapshot {
+function buildStaleSnapshot(outcome: Outcome = "home"): Snapshot {
   const now = SAMPLE_NOW;
-  const snapshot = makeBaseSnapshot();
+  const snapshot = makeBaseSnapshot(outcome);
 
   const txlineTimestamp = now - 5 * 60 * 1000;
   const polymarketTimestamp = now - 3 * 60 * 1000;
 
   snapshot.status = "stale";
   snapshot.txline = {
-    probability: 0.548,
-    messageId: "msg-stale-001",
+    probability: OUTCOME_PROBABILITY[outcome],
+    messageId: `${OUTCOME_MESSAGE_ID[outcome]}-stale`,
     timestamp: txlineTimestamp,
     receivedAt: now,
     fresh: false,
@@ -281,8 +342,8 @@ function buildStaleSnapshot(): Snapshot {
   };
 
   snapshot.polymarket = {
-    bestAsk: 0.506,
-    bestBid: 0.498,
+    bestAsk: OUTCOME_BEST_ASK[outcome],
+    bestBid: OUTCOME_BEST_BID[outcome],
     askSize: 500,
     feeRate: 0.05,
     bookSeq: 1001,
@@ -293,11 +354,11 @@ function buildStaleSnapshot(): Snapshot {
     marketClosed: false,
     acceptingOrders: true,
     bookEmpty: false,
-    yesTokenId: "token-yes-eng-001",
+    yesTokenId: OUTCOME_TOKEN_ID[outcome],
   };
 
-  const grossGap = computeGrossGap(0.548, 0.506);
-  const feePerShare = computeFeePerShare(0.05, 0.506);
+  const grossGap = computeGrossGap(OUTCOME_PROBABILITY[outcome], OUTCOME_BEST_ASK[outcome]);
+  const feePerShare = computeFeePerShare(0.05, OUTCOME_BEST_ASK[outcome]);
   const gapAfterFee = computeGapAfterFee(grossGap, feePerShare);
 
   snapshot.gap = {
@@ -323,9 +384,9 @@ function buildStaleSnapshot(): Snapshot {
   return snapshot;
 }
 
-function buildUnavailableSnapshot(): Snapshot {
+function buildUnavailableSnapshot(outcome: Outcome = "home"): Snapshot {
   const now = SAMPLE_NOW;
-  const snapshot = makeBaseSnapshot();
+  const snapshot = makeBaseSnapshot(outcome);
 
   snapshot.status = "unavailable";
   snapshot.errorMessage = "Market closed or source disconnected.";
@@ -359,8 +420,8 @@ function buildUnavailableSnapshot(): Snapshot {
   return snapshot;
 }
 
-function buildErrorSnapshot(): Snapshot {
-  const snapshot = makeBaseSnapshot();
+function buildErrorSnapshot(outcome: Outcome = "home"): Snapshot {
+  const snapshot = makeBaseSnapshot(outcome);
 
   snapshot.status = "error";
   snapshot.errorMessage = "Failed to fetch snapshot from data source.";
@@ -379,8 +440,8 @@ function buildErrorSnapshot(): Snapshot {
   return snapshot;
 }
 
-function buildLoadingSnapshot(): Snapshot {
-  const snapshot = makeBaseSnapshot();
+function buildLoadingSnapshot(outcome: Outcome = "home"): Snapshot {
+  const snapshot = makeBaseSnapshot(outcome);
 
   snapshot.status = "loading";
   snapshot.alertKind = "no-alert";
@@ -390,13 +451,19 @@ function buildLoadingSnapshot(): Snapshot {
 
 export class MockDataProvider implements DataProvider {
   private scenario: MockScenario;
+  private outcome: Outcome;
 
-  constructor(scenario: MockScenario = "live") {
+  constructor(scenario: MockScenario = "live", outcome: Outcome = "home") {
     this.scenario = scenario;
+    this.outcome = outcome;
   }
 
   setScenario(scenario: MockScenario): void {
     this.scenario = scenario;
+  }
+
+  setOutcome(outcome: Outcome): void {
+    this.outcome = outcome;
   }
 
   async getSnapshot(): Promise<Snapshot> {
@@ -404,19 +471,19 @@ export class MockDataProvider implements DataProvider {
 
     switch (this.scenario) {
       case "live":
-        return buildLiveSnapshot();
+        return buildLiveSnapshot(this.outcome);
       case "alert":
-        return buildAlertSnapshot();
+        return buildAlertSnapshot(this.outcome);
       case "stale":
-        return buildStaleSnapshot();
+        return buildStaleSnapshot(this.outcome);
       case "unavailable":
-        return buildUnavailableSnapshot();
+        return buildUnavailableSnapshot(this.outcome);
       case "error":
-        return buildErrorSnapshot();
+        return buildErrorSnapshot(this.outcome);
       case "loading":
-        return buildLoadingSnapshot();
+        return buildLoadingSnapshot(this.outcome);
       default:
-        return buildLiveSnapshot();
+        return buildLiveSnapshot(this.outcome);
     }
   }
 }
@@ -426,10 +493,10 @@ function simulateLatency(): Promise<void> {
 }
 
 export const mockSnapshots = {
-  live: () => buildLiveSnapshot(),
-  alert: () => buildAlertSnapshot(),
-  stale: () => buildStaleSnapshot(),
-  unavailable: () => buildUnavailableSnapshot(),
-  error: () => buildErrorSnapshot(),
-  loading: () => buildLoadingSnapshot(),
+  live: (outcome: Outcome = "home") => buildLiveSnapshot(outcome),
+  alert: (outcome: Outcome = "home") => buildAlertSnapshot(outcome),
+  stale: (outcome: Outcome = "home") => buildStaleSnapshot(outcome),
+  unavailable: (outcome: Outcome = "home") => buildUnavailableSnapshot(outcome),
+  error: (outcome: Outcome = "home") => buildErrorSnapshot(outcome),
+  loading: (outcome: Outcome = "home") => buildLoadingSnapshot(outcome),
 };

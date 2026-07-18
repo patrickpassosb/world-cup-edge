@@ -81,7 +81,7 @@ export async function fetchPolymarketData(
       const tokens: string[] = JSON.parse(market.clobTokenIds);
       const labels: string[] = market.outcomes ? JSON.parse(market.outcomes) : [];
       const yesIdx = labels.findIndex(
-        (l) => l.toLowerCase() === "yes" || l.toLowerCase().includes("england"),
+        (l) => l.toLowerCase() === "yes",
       );
       if (yesIdx >= 0 && tokens[yesIdx]) {
         yesTokenId = tokens[yesIdx];
@@ -115,7 +115,27 @@ export async function searchActiveSoccerEvents(
   }
 }
 
-let cachedEvents: { data: GammaEvent[]; ts: number } | null = null;
+const FIFA_TEAM_CODES: Record<string, string> = {
+  england: "eng", france: "fra", spain: "esp", argentina: "arg",
+  brazil: "bra", germany: "ger", portugal: "por", netherlands: "ned",
+  italy: "ita", belgium: "bel", croatia: "cro", morocco: "mar",
+  japan: "jpn", "united states": "usa", usa: "usa", mexico: "mex",
+  canada: "can", australia: "aus", "south korea": "kor",
+  "korea republic": "kor", korea: "kor", switzerland: "sui",
+  serbia: "srb", uruguay: "uru", colombia: "col", ecuador: "ecu",
+  senegal: "sen", ghana: "gha", cameroon: "cmr", tunisia: "tun",
+  "saudi arabia": "ksa", qatar: "qat", iran: "irn", poland: "pol",
+  wales: "wal", denmark: "den", norway: "nor", sweden: "swe",
+  austria: "aut", "czech republic": "cze", czechia: "cze",
+  ukraine: "ukr", russia: "rus", turkey: "tur", greece: "gre",
+  scotland: "sco", ireland: "irl", romania: "rou", hungary: "hun",
+  slovakia: "svk", slovenia: "svn", albania: "alb", georgia: "geo",
+  "ivory coast": "civ", "côte d'ivoire": "civ", "cote d'ivoire": "civ",
+  "south africa": "rsa", nigeria: "nga", egypt: "egy", algeria: "alg",
+  mali: "mli", chile: "chi", peru: "per", paraguay: "par",
+  venezuela: "ven", panama: "pan", "costa rica": "crc",
+  jamaica: "jam", honduras: "hon",
+};
 
 function normalizeTeamName(name: string): string {
   return name
@@ -126,44 +146,72 @@ function normalizeTeamName(name: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function teamToFifaCode(team: string): string {
+  const key = normalizeTeamName(team);
+  return FIFA_TEAM_CODES[key] ?? key.slice(0, 3);
+}
+
+function buildEventSlug(home: string, away: string, kickoffISO: string): string {
+  const date = kickoffISO.slice(0, 10);
+  const homeCode = teamToFifaCode(home);
+  const awayCode = teamToFifaCode(away);
+  return `fifwc-${homeCode}-${awayCode}-${date}`;
+}
+
+function buildHomeMarketSlug(eventSlug: string, home: string): string {
+  const homeCode = teamToFifaCode(home);
+  return `${eventSlug}-${homeCode}`;
+}
+
+function buildAwayMarketSlug(eventSlug: string, away: string): string {
+  const awayCode = teamToFifaCode(away);
+  return `${eventSlug}-${awayCode}`;
+}
+
+function buildDrawMarketSlug(eventSlug: string): string {
+  return `${eventSlug}-draw`;
+}
+
+export interface PolymarketMatch {
+  eventSlug: string;
+  homeMarketSlug: string;
+  drawMarketSlug: string;
+  awayMarketSlug: string;
+}
+
 export async function findPolymarketMatchForTeams(
   home: string,
   away: string,
-): Promise<{ eventSlug: string; marketSlug: string } | null> {
+  kickoffISO: string,
+): Promise<PolymarketMatch | null> {
   try {
-    let events: GammaEvent[];
-    if (cachedEvents && Date.now() - cachedEvents.ts <= 60_000) {
-      events = cachedEvents.data;
-    } else {
-      events = await searchActiveSoccerEvents();
-      cachedEvents = { data: events, ts: Date.now() };
-    }
+    if (!home || !away || !kickoffISO) return null;
 
-    const homeNorm = normalizeTeamName(home);
-    const awayNorm = normalizeTeamName(away);
-    if (!homeNorm || !awayNorm) return null;
+    const eventSlug = buildEventSlug(home, away, kickoffISO);
+    const event = await fetchEvent(eventSlug);
+    if (!event) return null;
+    if (event.closed) return null;
 
-    const matchedEvent = events.find((ev) => {
-      const titleNorm = normalizeTeamName(ev.title);
-      return (
-        titleNorm.includes(homeNorm) && titleNorm.includes(awayNorm)
-      );
-    });
-    if (!matchedEvent) return null;
-
-    const markets = Array.isArray(matchedEvent.markets)
-      ? matchedEvent.markets
-      : [];
+    const markets = Array.isArray(event.markets) ? event.markets : [];
     if (markets.length === 0) return null;
 
-    const homeMarket = markets.find((m) => {
-      const q = normalizeTeamName(m.question);
-      return q.includes(homeNorm);
-    });
-    const market: GammaMarket | undefined = homeMarket ?? markets[0];
-    if (!market) return null;
+    const homeSlug = buildHomeMarketSlug(eventSlug, home);
+    const drawSlug = buildDrawMarketSlug(eventSlug);
+    const awaySlug = buildAwayMarketSlug(eventSlug, away);
 
-    return { eventSlug: matchedEvent.slug, marketSlug: market.slug };
+    const homeMarket = markets.find((m) => m.slug === homeSlug);
+    const drawMarket = markets.find((m) => m.slug === drawSlug);
+    const awayMarket = markets.find((m) => m.slug === awaySlug);
+
+    const hasAtLeastOne = homeMarket || drawMarket || awayMarket;
+    if (!hasAtLeastOne) return null;
+
+    return {
+      eventSlug: event.slug,
+      homeMarketSlug: homeMarket?.slug ?? homeSlug,
+      drawMarketSlug: drawMarket?.slug ?? drawSlug,
+      awayMarketSlug: awayMarket?.slug ?? awaySlug,
+    };
   } catch {
     return null;
   }

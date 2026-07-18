@@ -37,7 +37,10 @@ export default function RootLayout({
       lang="en"
       className={`${sourceSerif.variable} ${sourceSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-surface text-on-surface">
+      <body
+        className="min-h-full flex flex-col bg-surface text-on-surface"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>
