@@ -5,10 +5,6 @@ import {
   AlertTriangle,
   Circle,
   Clock,
-  Filter,
-  Radio,
-  RefreshCw,
-  Settings,
   WifiOff,
   XCircle,
 } from "lucide-react";
@@ -403,20 +399,9 @@ export default function DashboardPage() {
 function TopBar() {
   return (
     <header className="border-b-2 border-on-surface">
-      <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-4 md:h-[72px] md:px-8">
+      <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center px-4 md:h-[72px] md:px-8">
         <div className="font-sans text-2xl font-bold tracking-tight text-on-surface md:text-[38px] md:leading-none">
           WORLD CUP EDGE
-        </div>
-        <div className="flex items-center gap-4 text-on-surface md:gap-6">
-          <span className="hidden items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-on-surface-variant md:inline-flex">
-            <Radio className="h-4 w-4" aria-hidden="true" />
-            Live feed active
-          </span>
-          <span className="flex items-center gap-3" aria-hidden="true">
-            <Filter className="h-[18px] w-[18px]" />
-            <RefreshCw className="h-[18px] w-[18px]" />
-            <Settings className="h-[18px] w-[18px]" />
-          </span>
         </div>
       </div>
     </header>
