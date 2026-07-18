@@ -8,7 +8,7 @@ function makeFixture(overrides: Partial<Fixture> = {}): Fixture {
     participant1: "France",
     participant2: "England",
     participant1IsHome: true,
-    startTime: "1784408400000",
+    startTime: 1784408400000,
     gameState: 1,
     competition: "World Cup",
     competitionId: 72,
@@ -130,8 +130,8 @@ describe("fetchAvailableMatches", () => {
 
   it("sorts by kickoffUTC ascending", async () => {
     fetchFixturesMock.mockResolvedValue([
-      makeFixture({ fixtureId: 1, startTime: "1784408400000" }),
-      makeFixture({ fixtureId: 2, startTime: "1784149200000" }),
+      makeFixture({ fixtureId: 1, startTime: 1784408400000 }),
+      makeFixture({ fixtureId: 2, startTime: 1784149200000 }),
     ]);
     findPolymarketMatchForTeamsMock.mockResolvedValue(null);
     const { fetchAvailableMatches } = await import("@/lib/data/matches-provider");
@@ -172,8 +172,8 @@ describe("fetchAvailableMatches", () => {
 
   it("skips fixtures whose startTime is not a valid timestamp", async () => {
     fetchFixturesMock.mockResolvedValue([
-      makeFixture({ fixtureId: 1, startTime: "not-a-number" }),
-      makeFixture({ fixtureId: 2, startTime: "1784408400000" }),
+      makeFixture({ fixtureId: 1, startTime: NaN }),
+      makeFixture({ fixtureId: 2, startTime: 1784408400000 }),
     ]);
     findPolymarketMatchForTeamsMock.mockResolvedValue(null);
     const { fetchAvailableMatches } = await import("@/lib/data/matches-provider");

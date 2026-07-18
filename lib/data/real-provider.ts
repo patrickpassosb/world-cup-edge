@@ -57,12 +57,15 @@ export class RealDataProvider implements DataProvider {
     homeTeam?: string,
     awayTeam?: string,
     kickoffISO?: string,
+    drawMarketSlug?: string,
+    awayMarketSlug?: string,
+    eventSlug?: string,
   ) {
     this.fixtureId = fixtureId ?? CONFIG.txline.fixtureId;
-    this.homeMarketSlug = homeMarketSlug ?? CONFIG.polymarket.marketSlug;
-    this.eventSlug = this.homeMarketSlug.replace(/-(eng|draw|arg)$/, "") || CONFIG.polymarket.eventSlug;
-    this.drawMarketSlug = `${this.eventSlug}-draw`;
-    this.awayMarketSlug = `${this.eventSlug}-away`;
+    this.homeMarketSlug = homeMarketSlug ?? "";
+    this.drawMarketSlug = drawMarketSlug ?? "";
+    this.awayMarketSlug = awayMarketSlug ?? "";
+    this.eventSlug = eventSlug ?? "";
     this.outcome = outcome ?? "home";
     this.homeTeam = homeTeam ?? "";
     this.awayTeam = awayTeam ?? "";
@@ -91,8 +94,8 @@ export class RealDataProvider implements DataProvider {
     const away = fixture
       ? fixture.participant1IsHome ? fixture.participant2 : fixture.participant1
       : this.awayTeam;
-    const kickoff = fixture?.startTime ?? this.kickoffISO;
-    const kickoffUTC = kickoff ? new Date(Number(kickoff) || Date.parse(kickoff)).toISOString() : "";
+    const kickoff: number | string | undefined = fixture?.startTime ?? this.kickoffISO;
+    const kickoffUTC = kickoff ? new Date(Number(kickoff) || Date.parse(String(kickoff))).toISOString() : "";
     const date = kickoffUTC ? kickoffUTC.slice(0, 10) : "";
     const outcomeLabel = deriveOutcomeLabel(this.outcome, home, away);
     return {
@@ -141,7 +144,6 @@ export class RealDataProvider implements DataProvider {
       txlineData.fixture,
       txlineData.odds,
       now,
-      CONFIG.txline.serviceLevel,
       this.outcome,
     );
 
@@ -203,6 +205,7 @@ export class RealDataProvider implements DataProvider {
       bookEmpty: normalizedPoly.bookEmpty,
       equivalencePassed: equivalence.passed,
       serviceLevel: normalizedTxline.serviceLevel,
+      fixtureGameState: txlineData.fixture?.gameState ?? null,
       previousPhase: this.previousPhase,
       previousConsecutiveSamples: this.previousConsecutiveSamples,
       messageId: normalizedTxline.messageId,

@@ -12,6 +12,7 @@ export interface OddsPayload {
   priceNames: string[];
   prices: string[];
   pct: string[];
+  serviceLevel?: number;
 }
 
 export interface Fixture {
@@ -19,7 +20,7 @@ export interface Fixture {
   participant1: string;
   participant2: string;
   participant1IsHome: boolean;
-  startTime: string;
+  startTime: number;
   gameState: number;
   competition: string;
   competitionId: number;

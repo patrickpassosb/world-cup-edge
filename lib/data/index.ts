@@ -6,6 +6,9 @@ import type { Outcome } from "@/lib/types";
 export interface CreateProviderArgs {
   fixtureId?: number;
   homeMarketSlug?: string;
+  drawMarketSlug?: string;
+  awayMarketSlug?: string;
+  eventSlug?: string;
   outcome?: Outcome;
   homeTeam?: string;
   awayTeam?: string;
@@ -18,6 +21,9 @@ function realProviderKey(args: CreateProviderArgs): string {
   return [
     args.fixtureId ?? "default",
     args.homeMarketSlug ?? "default",
+    args.drawMarketSlug ?? "default",
+    args.awayMarketSlug ?? "default",
+    args.eventSlug ?? "default",
     args.outcome ?? "home",
   ].join(":");
 }
@@ -36,6 +42,9 @@ export function createProvider(args: CreateProviderArgs = {}): DataProvider {
         args.homeTeam,
         args.awayTeam,
         args.kickoffISO,
+        args.drawMarketSlug,
+        args.awayMarketSlug,
+        args.eventSlug,
       );
       realProviderCache.set(key, provider);
     }

@@ -15,9 +15,9 @@ export type MockScenario =
 const SAMPLE_NOW = 1752620400000;
 
 const OUTCOME_LABELS: Record<Outcome, string> = {
-  home: "England",
+  home: MATCH.homeTeam,
   draw: "Draw",
-  away: "France",
+  away: MATCH.awayTeam,
 };
 
 const OUTCOME_PROBABILITY: Record<Outcome, number> = {
@@ -51,15 +51,15 @@ const OUTCOME_MESSAGE_ID: Record<Outcome, string> = {
 };
 
 const OUTCOME_LABEL_FOR_TOKEN: Record<Outcome, string> = {
-  home: "England YES",
+  home: `${MATCH.homeTeam} YES`,
   draw: "Yes",
-  away: "France YES",
+  away: `${MATCH.awayTeam} YES`,
 };
 
 const OUTCOME_RESOLUTION_WORDING: Record<Outcome, string> = {
-  home: "England to win in the first 90 minutes plus stoppage time (excludes extra time)",
-  draw: "England vs France to end in a draw in the first 90 minutes plus stoppage time (excludes extra time)",
-  away: "France to win in the first 90 minutes plus stoppage time (excludes extra time)",
+  home: `${MATCH.homeTeam} to win in the first 90 minutes plus stoppage time (excludes extra time)`,
+  draw: `${MATCH.homeTeam} vs ${MATCH.awayTeam} to end in a draw in the first 90 minutes plus stoppage time (excludes extra time)`,
+  away: `${MATCH.awayTeam} to win in the first 90 minutes plus stoppage time (excludes extra time)`,
 };
 
 function buildEquivalenceInput(outcome: Outcome) {
@@ -233,6 +233,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
     bookEmpty: snapshot.polymarket.bookEmpty,
     equivalencePassed: snapshot.equivalence !== null ? snapshot.equivalence.passed : false,
     serviceLevel: snapshot.txline.serviceLevel,
+    fixtureGameState: null,
     previousPhase: "IDLE",
     previousConsecutiveSamples: 0,
     messageId: snapshot.txline.messageId,
@@ -309,6 +310,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
     bookEmpty: false,
     equivalencePassed: true,
     serviceLevel: CONFIG.txline.serviceLevel,
+    fixtureGameState: null,
     previousPhase: "SAMPLING",
     previousConsecutiveSamples: 1,
     messageId: snapshot.txline.messageId,

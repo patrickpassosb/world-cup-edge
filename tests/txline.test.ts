@@ -37,7 +37,7 @@ function makeFixture(overrides: Partial<Fixture> = {}): Fixture {
     participant1: "England",
     participant2: "Argentina",
     participant1IsHome: true,
-    startTime: "2026-07-15T19:00:00Z",
+    startTime: 1784142000000,
     gameState: 1,
     competition: "World Cup",
     competitionId: 500001,

@@ -47,6 +47,7 @@ export interface AlertInput {
   bookEmpty: boolean;
   equivalencePassed: boolean;
   serviceLevel: number;
+  fixtureGameState: number | null;
   previousPhase: AlertPhase;
   previousConsecutiveSamples: number;
   messageId: string | null;
@@ -72,6 +73,8 @@ export function evaluateAlert(input: AlertInput): {
 
   if (input.serviceLevel === 1) {
     suppressedReason = "TxLINE service level 1 (60-second delayed). Alerts suppressed.";
+  } else if (input.fixtureGameState === 6) {
+    suppressedReason = "Fixture is cancelled (GameState 6). Alerts suppressed.";
   } else if (!input.equivalencePassed) {
     suppressedReason = "Contract equivalence checks failed. Alerts suppressed.";
   } else if (!input.txlineFresh) {

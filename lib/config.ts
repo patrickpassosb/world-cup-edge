@@ -7,8 +7,6 @@ export const CONFIG = {
     delayedMaxAgeMs: 120_000,
   },
   polymarket: {
-    eventSlug: "fifwc-eng-arg-2026-07-15",
-    marketSlug: "fifwc-eng-arg-2026-07-15-eng",
     maxAgeMs: 10_000,
   },
   gap: {
@@ -22,10 +20,10 @@ export const CONFIG = {
 
 export const MATCH = {
   homeTeam: "England",
-  awayTeam: "France",
-  matchName: "England vs France",
-  matchDate: "2026-07-16",
-  kickoffUTC: "2026-07-16T19:00:00Z",
+  awayTeam: "Argentina",
+  matchName: "England vs Argentina",
+  matchDate: "2026-07-15",
+  kickoffUTC: "2026-07-15T19:00:00Z",
   rules: "regulation-time 1X2",
 };
 

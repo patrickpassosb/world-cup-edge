@@ -18,6 +18,7 @@ const healthyInput = {
   bookEmpty: false,
   equivalencePassed: true,
   serviceLevel: 12,
+  fixtureGameState: 1,
   previousPhase: "SAMPLING" as const,
   previousConsecutiveSamples: 1,
   messageId: "msg-safety-1",

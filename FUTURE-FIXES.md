@@ -192,6 +192,13 @@ If any of these are missing, implement them per FIX-SPEC.md BUG-2.
 **Description**: If the requested slug isn't found, returns the first market (might be a different team's market).
 **Fix**: Return `null` if the specific slug isn't found.
 
+### Data identity (verified during Tier A review)
+
+#### BUG-8: `MarketPeriod: null` verified — no change needed
+**Severity**: NONE (verified)
+**Location**: `lib/txline/normalize.ts:46`
+**Description**: Verified against the live TxLINE API on 2026-07-18 for fixture 18257865. The odds snapshot returns 27 rows. The regulation-time `1X2_PARTICIPANT_RESULT` row is the one with `MarketPeriod: null` (the row with `MarketPeriod: "half=1"` is the first-half market). `null` IS the regulation-time marker for this API — rejecting it would break the only working row selector. The handoff doc (`docs/match-picker-handoff.md:333`) is correct that `null` means "full match"; for a 1X2 market, "full match" = regulation time (90-min result). No code change. Document here for future maintainers.
+
 ---
 
 *These fixes are documented for future work. They are NOT required for the hackathon submission. See `FIX-SPEC.md` for the Tier A fixes that ARE in scope.*

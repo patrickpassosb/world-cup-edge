@@ -83,7 +83,7 @@ export function isBookEmpty(book: ClobBook | null): boolean {
   if (!book) return true;
   const hasBids = book.bids && book.bids.length > 0;
   const hasAsks = book.asks && book.asks.length > 0;
-  return !hasBids && !hasAsks;
+  return !hasBids || !hasAsks;
 }
 
 export function extractFeeRate(market: GammaMarket | null): number | null {

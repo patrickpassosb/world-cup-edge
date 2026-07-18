@@ -107,8 +107,8 @@ export function selectRegulationTimeRow(
 }
 
 export function extractFixtureDate(fixture: Fixture | null): string | null {
-  if (!fixture || !fixture.startTime) return null;
-  return fixture.startTime.slice(0, 10);
+  if (!fixture || !fixture.startTime || !Number.isFinite(fixture.startTime)) return null;
+  return new Date(fixture.startTime).toISOString().slice(0, 10);
 }
 
 export function extractTeams(
@@ -129,7 +129,6 @@ export function normalizeTxline(
   fixture: Fixture | null,
   odds: OddsPayload[],
   receivedAt: number = Date.now(),
-  serviceLevel: number = CONFIG.txline.serviceLevel,
   outcome: Outcome = "home",
 ): NormalizedTxline {
   const regRow = selectRegulationTimeRow(odds);
@@ -137,12 +136,17 @@ export function normalizeTxline(
   const teams = extractTeams(fixture);
   const matchDate = extractFixtureDate(fixture);
 
+  const distributionValid = regRow ? validateDistribution(regRow.pct) : false;
+  const probability = distributionValid ? (outcomeResult?.probability ?? null) : null;
+
   const timestamp = regRow?.ts ?? null;
   const fresh =
     timestamp !== null && receivedAt - timestamp <= CONFIG.txline.maxAgeMs;
 
+  const serviceLevel = regRow?.serviceLevel ?? CONFIG.txline.serviceLevel;
+
   return {
-    probability: outcomeResult?.probability ?? null,
+    probability,
     messageId: regRow?.messageId ?? null,
     timestamp,
     receivedAt,
