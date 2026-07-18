@@ -41,6 +41,7 @@ export interface PolymarketData {
   acceptingOrders: boolean;
   bookEmpty: boolean;
   yesTokenId: string | null;
+  marketQuestion: string | null;
 }
 
 export interface GapResult {

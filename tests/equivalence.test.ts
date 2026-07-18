@@ -11,6 +11,7 @@ const VALID_INPUT = {
   polymarketAwayTeam: "France",
   polymarketMatchDate: "2026-07-16",
   polymarketResolutionWording: "England to win in the first 90 minutes plus stoppage time (excludes extra time)",
+  polymarketMarketQuestion: "Will England win on 2026-07-16?",
   selectedTokenLabel: "England YES",
   marketActive: true,
   marketClosed: false,
@@ -155,6 +156,7 @@ describe("checkEquivalence token matching", () => {
       outcome: "draw" as const,
       selectedTokenLabel: "Yes",
       polymarketResolutionWording: "England vs France to end in a draw in the first 90 minutes plus stoppage time (excludes extra time)",
+      polymarketMarketQuestion: "Will England vs France end in a draw on 2026-07-16?",
     });
     expect(result.checks.token).toBe(true);
   });
@@ -237,7 +239,99 @@ describe("checkEquivalence overall", () => {
       expectedDate: "2026-07-19",
       selectedTokenLabel: "Spain YES",
       polymarketResolutionWording: "Spain to win in the first 90 minutes plus stoppage time (excludes extra time)",
+      polymarketMarketQuestion: "Will Spain win on 2026-07-19?",
     });
     expect(result.passed).toBe(true);
+  });
+
+  it("accepts plain Yes label when market question confirms home team (France home)", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineHomeTeam: "France",
+      txlineAwayTeam: "England",
+      polymarketHomeTeam: "France",
+      polymarketAwayTeam: "England",
+      expectedHomeTeam: "France",
+      expectedAwayTeam: "England",
+      selectedTokenLabel: "Yes",
+      polymarketResolutionWording: "France to win in the first 90 minutes plus stoppage time (excludes extra time)",
+      polymarketMarketQuestion: "Will France win on 2026-07-16?",
+    });
+    expect(result.checks.token).toBe(true);
+  });
+
+  it("rejects plain Yes label when market question names the wrong team", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineHomeTeam: "France",
+      txlineAwayTeam: "England",
+      polymarketHomeTeam: "France",
+      polymarketAwayTeam: "England",
+      expectedHomeTeam: "France",
+      expectedAwayTeam: "England",
+      selectedTokenLabel: "Yes",
+      polymarketResolutionWording: "England to win in the first 90 minutes plus stoppage time (excludes extra time)",
+      polymarketMarketQuestion: "Will England win on 2026-07-16?",
+    });
+    expect(result.checks.token).toBe(false);
+  });
+
+  it("rejects No label even when market question confirms team", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      selectedTokenLabel: "No",
+      polymarketMarketQuestion: "Will England win on 2026-07-16?",
+    });
+    expect(result.checks.token).toBe(false);
+  });
+
+  it("rejects Yes label when market question is null", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      selectedTokenLabel: "Yes",
+      polymarketMarketQuestion: null,
+    });
+    expect(result.checks.token).toBe(false);
+  });
+
+  it("accepts accent-stripped team names (Côte d'Ivoire vs Cote d'Ivoire)", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineHomeTeam: "Côte d'Ivoire",
+      txlineAwayTeam: "Ghana",
+      polymarketHomeTeam: "Cote d'Ivoire",
+      polymarketAwayTeam: "Ghana",
+      expectedHomeTeam: "Côte d'Ivoire",
+      expectedAwayTeam: "Ghana",
+      selectedTokenLabel: "Côte d'Ivoire YES",
+      polymarketResolutionWording: "Côte d'Ivoire to win in the first 90 minutes plus stoppage time (excludes extra time)",
+      polymarketMarketQuestion: "Will Côte d'Ivoire win on 2026-07-16?",
+    });
+    expect(result.checks.teams).toBe(true);
+  });
+
+  it("accepts null txlineMarketPeriod for regulation-time 1X2 (live API shape)", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineMarketType: "1X2_PARTICIPANT_RESULT",
+      txlineMarketPeriod: null,
+    });
+    expect(result.checks.rules).toBe(true);
+  });
+
+  it("rejects extra-time market period", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineMarketPeriod: "extra_time",
+    });
+    expect(result.checks.rules).toBe(false);
+  });
+
+  it("rejects first-half market period", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineMarketPeriod: "half=1",
+    });
+    expect(result.checks.rules).toBe(false);
   });
 });

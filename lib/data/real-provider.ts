@@ -171,6 +171,7 @@ export class RealDataProvider implements DataProvider {
       polymarketAwayTeam: normalizedPoly.awayTeam,
       polymarketMatchDate: normalizedPoly.matchDate,
       polymarketResolutionWording: normalizedPoly.resolutionWording,
+      polymarketMarketQuestion: normalizedPoly.marketQuestion,
       selectedTokenLabel: normalizedPoly.yesTokenLabel,
       marketActive: normalizedPoly.marketActive,
       marketClosed: normalizedPoly.marketClosed,
@@ -273,6 +274,7 @@ export class RealDataProvider implements DataProvider {
         acceptingOrders: normalizedPoly.acceptingOrders,
         bookEmpty: normalizedPoly.bookEmpty,
         yesTokenId: normalizedPoly.yesTokenId,
+        marketQuestion: normalizedPoly.marketQuestion,
       },
       gap: {
         grossGap,
@@ -377,6 +379,7 @@ export class RealDataProvider implements DataProvider {
         acceptingOrders: normalizedPoly.acceptingOrders,
         bookEmpty: normalizedPoly.bookEmpty,
         yesTokenId: normalizedPoly.yesTokenId,
+        marketQuestion: normalizedPoly.marketQuestion,
       },
       gap: {
         grossGap: null,
@@ -447,6 +450,7 @@ export class RealDataProvider implements DataProvider {
         acceptingOrders: false,
         bookEmpty: true,
         yesTokenId: null,
+        marketQuestion: null,
       },
       gap: {
         grossGap: null,

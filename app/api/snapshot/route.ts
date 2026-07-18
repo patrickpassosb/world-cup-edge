@@ -115,6 +115,7 @@ export async function GET(request: Request) {
         acceptingOrders: false,
         bookEmpty: true,
         yesTokenId: null,
+        marketQuestion: null,
       },
       gap: {
         grossGap: null,

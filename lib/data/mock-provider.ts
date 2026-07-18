@@ -62,6 +62,12 @@ const OUTCOME_RESOLUTION_WORDING: Record<Outcome, string> = {
   away: `${MATCH.awayTeam} to win in the first 90 minutes plus stoppage time (excludes extra time)`,
 };
 
+const OUTCOME_MARKET_QUESTION: Record<Outcome, string> = {
+  home: `Will ${MATCH.homeTeam} win on ${MATCH.matchDate}?`,
+  draw: `Will ${MATCH.homeTeam} vs ${MATCH.awayTeam} end in a draw on ${MATCH.matchDate}?`,
+  away: `Will ${MATCH.awayTeam} win on ${MATCH.matchDate}?`,
+};
+
 function buildEquivalenceInput(outcome: Outcome) {
   return {
     txlineHomeTeam: MATCH.homeTeam,
@@ -73,6 +79,7 @@ function buildEquivalenceInput(outcome: Outcome) {
     polymarketAwayTeam: MATCH.awayTeam,
     polymarketMatchDate: MATCH.matchDate,
     polymarketResolutionWording: OUTCOME_RESOLUTION_WORDING[outcome],
+    polymarketMarketQuestion: OUTCOME_MARKET_QUESTION[outcome],
     selectedTokenLabel: OUTCOME_LABEL_FOR_TOKEN[outcome],
     marketActive: true,
     marketClosed: false,
@@ -143,6 +150,7 @@ function makeBaseSnapshot(outcome: Outcome = "home"): Snapshot {
       acceptingOrders: true,
       bookEmpty: false,
       yesTokenId: null,
+      marketQuestion: null,
     },
     gap: {
       grossGap: null,
@@ -210,6 +218,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
     acceptingOrders: true,
     bookEmpty: false,
     yesTokenId: OUTCOME_TOKEN_ID[outcome],
+    marketQuestion: OUTCOME_MARKET_QUESTION[outcome],
   };
 
   snapshot.gap = {
@@ -287,6 +296,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
     acceptingOrders: true,
     bookEmpty: false,
     yesTokenId: OUTCOME_TOKEN_ID[outcome],
+    marketQuestion: OUTCOME_MARKET_QUESTION[outcome],
   };
 
   snapshot.gap = {
@@ -357,6 +367,7 @@ function buildStaleSnapshot(outcome: Outcome = "home"): Snapshot {
     acceptingOrders: true,
     bookEmpty: false,
     yesTokenId: OUTCOME_TOKEN_ID[outcome],
+    marketQuestion: OUTCOME_MARKET_QUESTION[outcome],
   };
 
   const grossGap = computeGrossGap(OUTCOME_PROBABILITY[outcome], OUTCOME_BEST_ASK[outcome]);
@@ -406,6 +417,7 @@ function buildUnavailableSnapshot(outcome: Outcome = "home"): Snapshot {
     acceptingOrders: false,
     bookEmpty: true,
     yesTokenId: null,
+    marketQuestion: null,
   };
   snapshot.alert = {
     active: false,

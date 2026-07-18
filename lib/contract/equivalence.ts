@@ -10,6 +10,7 @@ export interface EquivalenceInput {
   polymarketAwayTeam: string | null;
   polymarketMatchDate: string | null;
   polymarketResolutionWording: string | null;
+  polymarketMarketQuestion: string | null;
   selectedTokenLabel: string | null;
   marketActive: boolean;
   marketClosed: boolean;
@@ -22,7 +23,12 @@ export interface EquivalenceInput {
 
 function normalizeTeam(name: string | null): string {
   if (name === null) return "";
-  return name.trim().toLowerCase().replace(/\s+/g, " ");
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function teamsMatch(a: string | null, b: string | null): boolean {
@@ -41,12 +47,30 @@ function datesMatch(a: string | null, b: string | null): boolean {
 }
 
 function isRegulationTime1X2(marketType: string | null, marketPeriod: string | null): boolean {
-  if (marketType === null || marketPeriod === null) return false;
+  if (marketType === null) return false;
   const mt = marketType.toLowerCase();
+  const is1x2 =
+    mt.includes("1x2") ||
+    mt.includes("participant_result") ||
+    mt.includes("3way") ||
+    mt.includes("match result") ||
+    mt.includes("moneyline") ||
+    mt.includes("full time result") ||
+    mt.includes("ft result");
+  if (!is1x2) return false;
+  if (marketPeriod === null || marketPeriod === undefined || marketPeriod === "") return true;
   const mp = marketPeriod.toLowerCase();
-  const is1x2 = mt.includes("1x2") || mt.includes("3way") || mt.includes("match result");
-  const isRegulation = mp.includes("regulation") || mp.includes("full time") || mp.includes("90");
-  return is1x2 && isRegulation;
+  if (mp.includes("half=") || mp.includes("first half") || mp.includes("second half")) return false;
+  if (mp.includes("extra time") || mp.includes("extra_time") || mp.includes("overtime")) return false;
+  return (
+    mp.includes("regulation") ||
+    mp.includes("full time") ||
+    mp.includes("fulltime") ||
+    mp.includes("ft") ||
+    mp.includes("90") ||
+    mp.includes("regular") ||
+    mp === ""
+  );
 }
 
 function resolutionConfirmsRegulation(wording: string | null): boolean {
@@ -61,16 +85,44 @@ function resolutionConfirmsRegulation(wording: string | null): boolean {
   return hasRegulation && excludesExtraTime;
 }
 
-function tokenMatchesOutcome(label: string | null, outcome: Outcome, expectedTeam: string | null): boolean {
+function tokenMatchesOutcome(
+  label: string | null,
+  outcome: Outcome,
+  expectedTeam: string | null,
+  marketQuestion: string | null,
+): boolean {
   if (label === null) return false;
-  const l = label.toLowerCase();
-  if (l.includes("no")) return false;
+  const l = label.toLowerCase().trim();
+  if (l === "no" || l.includes(" no") || l.endsWith("-no")) return false;
   if (outcome === "draw") {
-    return l.includes("draw") || l === "yes";
+    if (l === "yes" || l === "true") {
+      return questionConfirmsDraw(marketQuestion);
+    }
+    return l.includes("draw");
+  }
+  if (l === "yes" || l === "true") {
+    return questionConfirmsTeam(marketQuestion, expectedTeam);
   }
   if (expectedTeam === null) return false;
-  const team = expectedTeam.toLowerCase();
+  const team = normalizeTeam(expectedTeam);
   return l.includes(team);
+}
+
+function questionConfirmsTeam(
+  question: string | null,
+  expectedTeam: string | null,
+): boolean {
+  if (question === null || expectedTeam === null) return false;
+  const q = normalizeTeam(question);
+  const team = normalizeTeam(expectedTeam);
+  if (team === "") return false;
+  return q.includes(team);
+}
+
+function questionConfirmsDraw(question: string | null): boolean {
+  if (question === null) return false;
+  const q = question.toLowerCase();
+  return q.includes("draw");
 }
 
 export function checkEquivalence(input: EquivalenceInput): EquivalenceResult {
@@ -109,7 +161,12 @@ export function checkEquivalence(input: EquivalenceInput): EquivalenceResult {
   const expectedTeam = input.outcome === "home" ? input.expectedHomeTeam
     : input.outcome === "away" ? input.expectedAwayTeam
     : null;
-  checks.token = tokenMatchesOutcome(input.selectedTokenLabel, input.outcome, expectedTeam);
+  checks.token = tokenMatchesOutcome(
+    input.selectedTokenLabel,
+    input.outcome,
+    expectedTeam,
+    input.polymarketMarketQuestion,
+  );
   if (!checks.token) {
     failures.push("Selected token does not correspond to the selected outcome.");
   }
