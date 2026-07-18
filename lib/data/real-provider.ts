@@ -16,15 +16,16 @@ import type { Fixture, OddsPayload } from "@/lib/txline/types";
 import type { Outcome, Snapshot, VerificationChecks } from "@/lib/types";
 
 function buildVerificationChecks(
-  equivalencePassed: boolean,
+  equivalence: { checks: { teams: boolean; date: boolean; rules: boolean; token: boolean; marketState: boolean } } | null,
   feeRate: number | null,
 ): VerificationChecks {
+  const eqChecks = equivalence?.checks;
   return {
-    teams: equivalencePassed,
-    date: equivalencePassed,
-    rules: equivalencePassed,
-    token: equivalencePassed,
-    marketState: equivalencePassed,
+    teams: eqChecks?.teams ?? false,
+    date: eqChecks?.date ?? false,
+    rules: eqChecks?.rules ?? false,
+    token: eqChecks?.token ?? false,
+    marketState: eqChecks?.marketState ?? false,
     fee: feeRate !== null,
   };
 }
@@ -238,7 +239,7 @@ export class RealDataProvider implements DataProvider {
 
     const status = this.determineStatus(normalizedTxline.fresh, normalizedPoly.fresh, equivalence.passed, normalizedPoly.marketClosed);
 
-    const checks = buildVerificationChecks(equivalence.passed, normalizedPoly.feeRate);
+    const checks = buildVerificationChecks(equivalence, normalizedPoly.feeRate);
 
     return {
       status,

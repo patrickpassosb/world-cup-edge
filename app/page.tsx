@@ -65,7 +65,7 @@ function formatCountdown(kickoffUTC: string): string {
 }
 
 function buildExplanation(snapshot: Snapshot): string {
-  const gap = snapshot.gap.gapAfterFee;
+  const gap = snapshot.gap.grossGap;
   if (gap === null) return "Gap value unavailable.";
   const pp = (gap * 100).toFixed(1);
   const label = snapshot.match.outcomeLabel || "the selected outcome";
@@ -94,6 +94,15 @@ function formatKickoffRelative(kickoffUTC: string): string {
   const month = target.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
   const day = target.getUTCDate();
   return `${month} ${day} ${timeStr}`;
+}
+
+function formatKickoffTimeUTC(kickoffUTC: string): string {
+  if (!kickoffUTC) return "—";
+  const target = new Date(kickoffUTC);
+  if (Number.isNaN(target.getTime())) return "—";
+  const hh = String(target.getUTCHours()).padStart(2, "0");
+  const mm = String(target.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm} UTC`;
 }
 
 function getMarketSlug(match: MatchEntry, outcome: Outcome): string | null {
@@ -459,6 +468,11 @@ function HeaderSection({
     ? selectedMatch.kickoffUTC.slice(0, 10)
     : snapshot?.match.date ?? MATCH.matchDate;
   const matchRules = snapshot?.match.rules ?? MATCH.rules;
+  const kickoffTime = selectedMatch
+    ? formatKickoffTimeUTC(selectedMatch.kickoffUTC)
+    : snapshot?.match.kickoffUTC
+      ? formatKickoffTimeUTC(snapshot.match.kickoffUTC)
+      : "19:00 UTC";
 
   return (
     <section className="mb-8 border-b border-outline-variant pb-1 md:mb-12">
@@ -468,7 +482,7 @@ function HeaderSection({
             {matchName}
           </h1>
           <p className="text-base italic text-on-surface-variant">
-            {matchDate} · 19:00 UTC · {matchRules}
+            {matchDate} · {kickoffTime} · {matchRules}
           </p>
         </div>
         <div className="text-left md:text-right">
@@ -526,7 +540,7 @@ function FocalPointSection({
     );
   }
 
-  const gapValue = snapshot?.gap.gapAfterFee ?? null;
+  const grossGap = snapshot?.gap.grossGap ?? null;
   const isAlert = displayState === "alert";
   const isUnavailable = displayState === "unavailable";
   const gapColor = isAlert ? "text-alert" : "text-primary";
@@ -539,7 +553,7 @@ function FocalPointSection({
         <p
           className={`mb-2 font-mono text-[64px] font-bold leading-none tracking-tight tabular-nums md:text-[96px] ${gapColor}`}
         >
-          {formatPp(gapValue)}
+          {formatPp(grossGap)}
         </p>
         <h2 className="mb-4 font-sans text-xs font-bold uppercase tracking-[0.2em] text-on-surface">
           {isAlert ? `Consensus Gap Alert — ${outcomeLabel} to win in regulation` : `Gross Consensus Gap — ${outcomeLabel} to win in regulation`}
@@ -554,10 +568,22 @@ function FocalPointSection({
           </p>
         )}
         {isUnavailable && (
-          <p className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-stale">
-            <WifiOff className="h-4 w-4" aria-hidden="true" />
-            {snapshot?.errorMessage ?? "Source unavailable. No comparison generated."}
-          </p>
+          <div className="mt-3 inline-flex flex-col items-center gap-1 text-sm font-medium text-stale">
+            <div className="inline-flex items-center gap-2">
+              <WifiOff className="h-4 w-4" aria-hidden="true" />
+              <span>{snapshot?.errorMessage ?? "Source unavailable. No comparison generated."}</span>
+            </div>
+            {snapshot?.equivalence && !snapshot.equivalence.passed && snapshot.equivalence.failures.length > 0 && (
+              <ul className="mt-1 list-disc text-left text-xs text-on-surface-variant">
+                {snapshot.equivalence.failures.map((failure) => (
+                  <li key={failure}>{failure}</li>
+                ))}
+              </ul>
+            )}
+            {snapshot?.equivalence && snapshot.equivalence.passed && snapshot?.polymarket.feeRate === null && (
+              <span className="text-xs text-on-surface-variant">Polymarket fee rate unavailable.</span>
+            )}
+          </div>
         )}
       </div>
     </section>
@@ -637,7 +663,9 @@ function TxlineColumn({
         <CheckRow passed={checks?.teams ?? false} label="Teams matched" />
         <CheckRow passed={checks?.date ?? false} label="Date matched" />
         <CheckRow passed={checks?.rules ?? false} label="Rules: regulation-time 1X2" />
+        <CheckRow passed={checks?.token ?? false} label="Token matches outcome" />
         <CheckRow passed={checks?.marketState ?? false} label="Market state: open" />
+        <CheckRow passed={checks?.fee ?? false} label="Fee rate available" />
       </div>
     </div>
   );

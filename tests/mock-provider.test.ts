@@ -34,6 +34,12 @@ describe("MockDataProvider live scenario", () => {
 
     expect(snapshot.checks).toBeDefined();
     expect(snapshot.equivalence).not.toBeNull();
+    expect(snapshot.checks.teams).toBe(snapshot.equivalence!.checks.teams);
+    expect(snapshot.checks.date).toBe(snapshot.equivalence!.checks.date);
+    expect(snapshot.checks.rules).toBe(snapshot.equivalence!.checks.rules);
+    expect(snapshot.checks.token).toBe(snapshot.equivalence!.checks.token);
+    expect(snapshot.checks.marketState).toBe(snapshot.equivalence!.checks.marketState);
+    expect(snapshot.checks.fee).toBe(true);
   });
 
   it("returns no-alert when gap is below threshold", async () => {
