@@ -12,22 +12,42 @@ export interface CreateProviderArgs {
   kickoffISO?: string;
 }
 
+const realProviderCache = new Map<string, RealDataProvider>();
+
+function realProviderKey(args: CreateProviderArgs): string {
+  return [
+    args.fixtureId ?? "default",
+    args.homeMarketSlug ?? "default",
+    args.outcome ?? "home",
+  ].join(":");
+}
+
 export function createProvider(args: CreateProviderArgs = {}): DataProvider {
   const source = process.env.DATA_SOURCE;
 
   if (source === "txline" || source === "real") {
-    return new RealDataProvider(
-      args.fixtureId,
-      args.homeMarketSlug,
-      args.outcome,
-      args.homeTeam,
-      args.awayTeam,
-      args.kickoffISO,
-    );
+    const key = realProviderKey(args);
+    let provider = realProviderCache.get(key);
+    if (!provider) {
+      provider = new RealDataProvider(
+        args.fixtureId,
+        args.homeMarketSlug,
+        args.outcome,
+        args.homeTeam,
+        args.awayTeam,
+        args.kickoffISO,
+      );
+      realProviderCache.set(key, provider);
+    }
+    return provider;
   }
 
   const scenario = (process.env.MOCK_SCENARIO ?? "live") as MockScenario;
   return new MockDataProvider(scenario, args.outcome);
+}
+
+export function clearProviderCache(): void {
+  realProviderCache.clear();
 }
 
 export { MockDataProvider, RealDataProvider };

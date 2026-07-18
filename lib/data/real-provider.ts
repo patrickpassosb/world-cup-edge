@@ -211,10 +211,22 @@ export class RealDataProvider implements DataProvider {
       now,
     });
 
-    this.previousPhase = alertEval.alert.phase;
-    this.previousConsecutiveSamples = alertEval.alert.consecutiveSamples;
-    if (alertEval.alert.active) {
+    let alert = alertEval.alert;
+
+    if (alert.active && alert.dedupeKey !== null && alert.dedupeKey === this.lastDedupeKey) {
+      alert = {
+        ...alert,
+        active: false,
+        reason: "Duplicate alert suppressed (same messageId + book state).",
+        suppressedReason: "Duplicate alert suppressed (same messageId + book state).",
+      };
+    }
+
+    this.previousPhase = alert.phase;
+    this.previousConsecutiveSamples = alert.consecutiveSamples;
+    if (alert.active) {
       this.lastAlertTime = now;
+      this.lastDedupeKey = alert.dedupeKey;
     }
 
     const status = this.determineStatus(normalizedTxline.fresh, normalizedPoly.fresh, equivalence.passed, normalizedPoly.marketClosed);
@@ -223,7 +235,7 @@ export class RealDataProvider implements DataProvider {
 
     return {
       status,
-      alertKind: alertEval.alert.active ? "alert" : "no-alert",
+      alertKind: alert.active ? "alert" : "no-alert",
       match: {
         name: matchMeta.name,
         date: matchMeta.date,
@@ -264,7 +276,7 @@ export class RealDataProvider implements DataProvider {
         gapAfterFee,
         threshold: CONFIG.gap.threshold,
       },
-      alert: alertEval.alert,
+      alert: alert,
       checks,
       equivalence,
       sourceSkewMs,
