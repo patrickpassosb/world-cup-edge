@@ -3,7 +3,6 @@
 ## Brief da Apresentação
 
 - **Formato principal:** pitch estendido de aproximadamente 3 minutos e 25 segundos mais Q&A
-- **Backup de tempo:** `world-cup-edge-solana-house-backup-3min.html`, sem o roadmap
 - **Idioma:** português
 - **Público:** jurados do World Cup Hackathon Brasil na Solana House SP
 - **Narrativa:** Problema-Agitação-Solução, ancorada na persona composta Maya

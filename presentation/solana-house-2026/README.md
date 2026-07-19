@@ -2,9 +2,7 @@
 
 ## Arquivos
 
-- `world-cup-edge-solana-house.html` - apresentação em HTML
-- `world-cup-edge-solana-house-standalone.html` - versão estendida recomendada, com roadmap e imagens incorporadas
-- `world-cup-edge-solana-house-backup-3min.html` - backup de 3 minutos, sem o roadmap
+- `world-cup-edge-solana-house-standalone.html` - apresentação em HTML, versão estendida com roadmap e imagens incorporadas
 - `pitch-script.md` - script cronometrado, autoavaliação e Q&A dos jurados
 - `assets/patrick-passos.jpeg` - retrato do fundador
 - `assets/world-cup-edge-live.png` - captura real durante France vs England
@@ -12,7 +10,7 @@
 
 ## Abrir
 
-Abra `world-cup-edge-solana-house-standalone.html` para apresentar a versão estendida com roadmap. Se o tempo for reduzido, abra `world-cup-edge-solana-house-backup-3min.html`. As duas versões incorporam o retrato, a captura real e o QR diretamente no HTML, evitando bloqueios de imagens locais. A internet é usada apenas para carregar as fontes do Google; as fontes locais de fallback preservam o layout se a conexão estiver indisponível.
+Abra `world-cup-edge-solana-house-standalone.html` para apresentar. O HTML incorpora o retrato, a captura real e o QR diretamente, evitando bloqueios de imagens locais. A internet é usada apenas para carregar as fontes do Google; as fontes locais de fallback preservam o layout se a conexão estiver indisponível.
 
 ## Controles
 
