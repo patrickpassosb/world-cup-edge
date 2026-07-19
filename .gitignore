@@ -23,3 +23,6 @@ design/stitch/generated/
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+
+# worktrees
+.worktrees/
