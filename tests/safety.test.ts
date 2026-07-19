@@ -8,6 +8,7 @@ const NOW = 1752620400000;
 
 const healthyInput = {
   gapAfterFee: QUALIFYING_GAP,
+  feeRate: 0.05,
   txlineFresh: true,
   polymarketFresh: true,
   sourceSkewMs: 1000,

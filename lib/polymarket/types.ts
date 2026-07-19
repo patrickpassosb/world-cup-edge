@@ -51,6 +51,7 @@ export interface NormalizedPolymarket {
   bestBid: number | null;
   askSize: number | null;
   feeRate: number | null;
+  feeExponent: number | null;
   bookSeq: number | null;
   timestamp: number | null;
   receivedAt: number;
@@ -65,4 +66,19 @@ export interface NormalizedPolymarket {
   awayTeam: string | null;
   matchDate: string | null;
   resolutionWording: string | null;
+  marketQuestion: string | null;
+}
+
+export interface ClobFeeDetails {
+  r: number | null;
+  e: number | null;
+  to: boolean | null;
+}
+
+export interface ClobMarketInfo {
+  conditionId: string;
+  takerBaseFee: number;
+  makerBaseFee: number;
+  feesEnabled: boolean | null;
+  fd: ClobFeeDetails | null;
 }

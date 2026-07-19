@@ -263,6 +263,14 @@ describe("findPolymarketMatchForTeams", () => {
           slug: "fifwc-civ-gha-2026-07-15-civ",
           question: "Will Côte d'Ivoire win on 2026-07-15?",
         }),
+        makeMarket({
+          slug: "fifwc-civ-gha-2026-07-15-draw",
+          question: "Will Côte d'Ivoire vs Ghana end in a draw on 2026-07-15?",
+        }),
+        makeMarket({
+          slug: "fifwc-civ-gha-2026-07-15-gha",
+          question: "Will Ghana win on 2026-07-15?",
+        }),
       ],
     });
     const fetchMock = vi.fn().mockResolvedValue({
@@ -281,6 +289,62 @@ describe("findPolymarketMatchForTeams", () => {
     expect(result).not.toBeNull();
     expect(result?.eventSlug).toBe("fifwc-civ-gha-2026-07-15");
     expect(result?.homeMarketSlug).toBe("fifwc-civ-gha-2026-07-15-civ");
+    expect(result?.drawMarketSlug).toBe("fifwc-civ-gha-2026-07-15-draw");
+    expect(result?.awayMarketSlug).toBe("fifwc-civ-gha-2026-07-15-gha");
+  });
+
+  it("returns match with null sibling slugs when only one market exists (no fabrication)", async () => {
+    vi.resetModules();
+    const event = makeEvent({
+      slug: "fifwc-civ-gha-2026-07-15",
+      markets: [
+        makeMarket({
+          slug: "fifwc-civ-gha-2026-07-15-civ",
+          question: "Will Côte d'Ivoire win on 2026-07-15?",
+        }),
+      ],
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [event],
+    });
+    global.fetch = fetchMock as unknown as typeof global.fetch;
+    const { findPolymarketMatchForTeams } = await import(
+      "@/lib/polymarket/client"
+    );
+    const result = await findPolymarketMatchForTeams(
+      "Côte d'Ivoire",
+      "Ghana",
+      "2026-07-15T19:00:00.000Z",
+    );
+    expect(result).not.toBeNull();
+    expect(result?.homeMarketSlug).toBe("fifwc-civ-gha-2026-07-15-civ");
+    expect(result?.drawMarketSlug).toBeNull();
+    expect(result?.awayMarketSlug).toBeNull();
+  });
+
+  it("returns null when none of the three expected markets exist", async () => {
+    vi.resetModules();
+    const event = makeEvent({
+      slug: "fifwc-civ-gha-2026-07-15",
+      markets: [
+        makeMarket({ slug: "some-other-market" }),
+      ],
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [event],
+    });
+    global.fetch = fetchMock as unknown as typeof global.fetch;
+    const { findPolymarketMatchForTeams } = await import(
+      "@/lib/polymarket/client"
+    );
+    const result = await findPolymarketMatchForTeams(
+      "Côte d'Ivoire",
+      "Ghana",
+      "2026-07-15T19:00:00.000Z",
+    );
+    expect(result).toBeNull();
   });
 
   it("returns null when the event is closed", async () => {

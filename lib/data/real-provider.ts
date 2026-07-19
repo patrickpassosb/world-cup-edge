@@ -16,15 +16,16 @@ import type { Fixture, OddsPayload } from "@/lib/txline/types";
 import type { Outcome, Snapshot, VerificationChecks } from "@/lib/types";
 
 function buildVerificationChecks(
-  equivalencePassed: boolean,
+  equivalence: { checks: { teams: boolean; date: boolean; rules: boolean; token: boolean; marketState: boolean } } | null,
   feeRate: number | null,
 ): VerificationChecks {
+  const eqChecks = equivalence?.checks;
   return {
-    teams: equivalencePassed,
-    date: equivalencePassed,
-    rules: equivalencePassed,
-    token: equivalencePassed,
-    marketState: equivalencePassed,
+    teams: eqChecks?.teams ?? false,
+    date: eqChecks?.date ?? false,
+    rules: eqChecks?.rules ?? false,
+    token: eqChecks?.token ?? false,
+    marketState: eqChecks?.marketState ?? false,
     fee: feeRate !== null,
   };
 }
@@ -148,7 +149,15 @@ export class RealDataProvider implements DataProvider {
     );
 
     const polyData = polyErrored ? null : (polyResult as PolymarketFetchResult);
-    const poly = polyData ?? { event: null, market: null, book: null, yesTokenId: null };
+    const poly = polyData ?? {
+      event: null,
+      market: null,
+      book: null,
+      yesTokenId: null,
+      clobInfo: null,
+      identityValid: false,
+      identityFailures: ["Polymarket fetch failed."],
+    };
 
     const normalizedPoly = normalizePolymarket(
       poly.event,
@@ -156,6 +165,7 @@ export class RealDataProvider implements DataProvider {
       poly.book,
       poly.yesTokenId,
       now,
+      poly.clobInfo,
     );
 
     const matchMeta = this.buildMatchMetadata(txlineData.fixture);
@@ -170,19 +180,23 @@ export class RealDataProvider implements DataProvider {
       polymarketAwayTeam: normalizedPoly.awayTeam,
       polymarketMatchDate: normalizedPoly.matchDate,
       polymarketResolutionWording: normalizedPoly.resolutionWording,
+      polymarketMarketQuestion: normalizedPoly.marketQuestion,
       selectedTokenLabel: normalizedPoly.yesTokenLabel,
       marketActive: normalizedPoly.marketActive,
       marketClosed: normalizedPoly.marketClosed,
       acceptingOrders: normalizedPoly.acceptingOrders,
+      polymarketIdentityValid: poly.identityValid,
+      polymarketIdentityFailures: poly.identityFailures,
       outcome: this.outcome,
       expectedHomeTeam: matchMeta.homeTeam,
       expectedAwayTeam: matchMeta.awayTeam,
       expectedDate: matchMeta.date || null,
     });
 
-    const grossGap = computeGrossGap(normalizedTxline.probability, normalizedPoly.bestAsk);
-    const feePerShare = computeFeePerShare(normalizedPoly.feeRate, normalizedPoly.bestAsk);
-    const gapAfterFee = computeGapAfterFee(grossGap, feePerShare);
+    const rawGrossGap = computeGrossGap(normalizedTxline.probability, normalizedPoly.bestAsk);
+    const grossGap = equivalence.passed ? rawGrossGap : null;
+    const feePerShare = computeFeePerShare(normalizedPoly.feeRate, normalizedPoly.bestAsk, normalizedPoly.feeExponent);
+    const gapAfterFee = equivalence.passed ? computeGapAfterFee(grossGap, feePerShare) : null;
 
     const sourceSkewMs =
       normalizedTxline.timestamp !== null && normalizedPoly.timestamp !== null
@@ -195,6 +209,7 @@ export class RealDataProvider implements DataProvider {
 
     const alertEval = evaluateAlert({
       gapAfterFee,
+      feeRate: normalizedPoly.feeRate,
       txlineFresh: normalizedTxline.fresh,
       polymarketFresh: normalizedPoly.fresh,
       sourceSkewMs,
@@ -225,16 +240,29 @@ export class RealDataProvider implements DataProvider {
       };
     }
 
-    this.previousPhase = alert.phase;
-    this.previousConsecutiveSamples = alert.consecutiveSamples;
+    if (alert.suppressedReason !== null) {
+      this.previousPhase = alert.phase === "COOLDOWN" ? alert.phase : "IDLE";
+      this.previousConsecutiveSamples = 0;
+    } else {
+      this.previousPhase = alert.phase;
+      this.previousConsecutiveSamples = alert.consecutiveSamples;
+    }
     if (alert.active) {
       this.lastAlertTime = now;
       this.lastDedupeKey = alert.dedupeKey;
     }
 
-    const status = this.determineStatus(normalizedTxline.fresh, normalizedPoly.fresh, equivalence.passed, normalizedPoly.marketClosed);
+    const status = this.determineStatus(
+      normalizedTxline.fresh,
+      normalizedPoly.fresh,
+      equivalence.passed,
+      normalizedPoly.marketClosed,
+      normalizedPoly.feeRate,
+      normalizedPoly.bookEmpty,
+      polyErrored,
+    );
 
-    const checks = buildVerificationChecks(equivalence.passed, normalizedPoly.feeRate);
+    const checks = buildVerificationChecks(equivalence, normalizedPoly.feeRate);
 
     return {
       status,
@@ -263,6 +291,7 @@ export class RealDataProvider implements DataProvider {
         bestBid: normalizedPoly.bestBid,
         askSize: normalizedPoly.askSize,
         feeRate: normalizedPoly.feeRate,
+        feeExponent: normalizedPoly.feeExponent,
         bookSeq: normalizedPoly.bookSeq,
         timestamp: normalizedPoly.timestamp,
         receivedAt: normalizedPoly.receivedAt,
@@ -272,6 +301,7 @@ export class RealDataProvider implements DataProvider {
         acceptingOrders: normalizedPoly.acceptingOrders,
         bookEmpty: normalizedPoly.bookEmpty,
         yesTokenId: normalizedPoly.yesTokenId,
+        marketQuestion: normalizedPoly.marketQuestion,
       },
       gap: {
         grossGap,
@@ -293,9 +323,15 @@ export class RealDataProvider implements DataProvider {
     polyFresh: boolean,
     equivalencePassed: boolean,
     marketClosed: boolean,
+    feeRate: number | null,
+    bookEmpty: boolean,
+    polyErrored: boolean,
   ): "live" | "stale" | "unavailable" {
     if (marketClosed) return "unavailable";
     if (!equivalencePassed) return "unavailable";
+    if (polyErrored) return "unavailable";
+    if (feeRate === null) return "unavailable";
+    if (bookEmpty) return "unavailable";
     if (!txlineFresh || !polyFresh) return "stale";
     return "live";
   }
@@ -330,13 +366,24 @@ export class RealDataProvider implements DataProvider {
     txlineErr: string | null,
     now: number,
   ): Snapshot {
-    const poly = polyData ?? { event: null, market: null, book: null, yesTokenId: null };
+    this.previousPhase = "IDLE";
+    this.previousConsecutiveSamples = 0;
+    const poly = polyData ?? {
+      event: null,
+      market: null,
+      book: null,
+      yesTokenId: null,
+      clobInfo: null,
+      identityValid: false,
+      identityFailures: [],
+    };
     const normalizedPoly = normalizePolymarket(
       poly.event,
       poly.market,
       poly.book,
       poly.yesTokenId,
       now,
+      poly.clobInfo,
     );
     const matchMeta = this.buildMatchMetadataForError();
 
@@ -367,6 +414,7 @@ export class RealDataProvider implements DataProvider {
         bestBid: normalizedPoly.bestBid,
         askSize: normalizedPoly.askSize,
         feeRate: normalizedPoly.feeRate,
+        feeExponent: normalizedPoly.feeExponent,
         bookSeq: normalizedPoly.bookSeq,
         timestamp: normalizedPoly.timestamp,
         receivedAt: normalizedPoly.receivedAt,
@@ -376,6 +424,7 @@ export class RealDataProvider implements DataProvider {
         acceptingOrders: normalizedPoly.acceptingOrders,
         bookEmpty: normalizedPoly.bookEmpty,
         yesTokenId: normalizedPoly.yesTokenId,
+        marketQuestion: normalizedPoly.marketQuestion,
       },
       gap: {
         grossGap: null,
@@ -398,7 +447,7 @@ export class RealDataProvider implements DataProvider {
         date: false,
         rules: false,
         token: false,
-        marketState: false,
+        marketState: normalizedPoly.marketActive && !normalizedPoly.marketClosed && normalizedPoly.acceptingOrders,
         fee: normalizedPoly.feeRate !== null,
       },
       equivalence: null,
@@ -409,6 +458,8 @@ export class RealDataProvider implements DataProvider {
   }
 
   private buildErrorSnapshot(message: string, now: number): Snapshot {
+    this.previousPhase = "IDLE";
+    this.previousConsecutiveSamples = 0;
     const matchMeta = this.buildMatchMetadataForError();
     return {
       status: "error",
@@ -437,6 +488,7 @@ export class RealDataProvider implements DataProvider {
         bestBid: null,
         askSize: null,
         feeRate: null,
+        feeExponent: null,
         bookSeq: null,
         timestamp: null,
         receivedAt: null,
@@ -446,6 +498,7 @@ export class RealDataProvider implements DataProvider {
         acceptingOrders: false,
         bookEmpty: true,
         yesTokenId: null,
+        marketQuestion: null,
       },
       gap: {
         grossGap: null,

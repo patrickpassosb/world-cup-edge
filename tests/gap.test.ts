@@ -57,6 +57,14 @@ describe("computeFeePerShare", () => {
   it("returns null when best ask is null", () => {
     expect(computeFeePerShare(0.05, null)).toBeNull();
   });
+
+  it("uses exponent 2 when provided (p^2 * (1-p)^2)", () => {
+    expect(computeFeePerShare(0.05, 0.5, 2)).toBeCloseTo(0.05 * 0.25 * 0.25, 6);
+  });
+
+  it("defaults to exponent 1 when not provided", () => {
+    expect(computeFeePerShare(0.05, 0.5)).toBeCloseTo(0.05 * 0.5 * 0.5, 6);
+  });
 });
 
 describe("computeGapAfterFee", () => {
@@ -72,6 +80,7 @@ describe("computeGapAfterFee", () => {
 
 describe("evaluateAlert threshold logic", () => {
   const baseInput = {
+    feeRate: 0.05,
     txlineFresh: true,
     polymarketFresh: true,
     sourceSkewMs: 1000,
@@ -121,6 +130,7 @@ describe("evaluateAlert threshold logic", () => {
 describe("evaluateAlert fail-closed", () => {
   const baseInput = {
     gapAfterFee: 0.1,
+    feeRate: 0.05,
     txlineFresh: true,
     polymarketFresh: true,
     sourceSkewMs: 1000,
@@ -207,6 +217,29 @@ describe("evaluateAlert fail-closed", () => {
     const result = evaluateAlert({ ...baseInput, serviceLevel: 1 });
     expect(result.alert.active).toBe(false);
     expect(result.alert.suppressedReason).toContain("level 1");
+  });
+
+  it("suppresses alert when fee rate is null", () => {
+    const result = evaluateAlert({ ...baseInput, feeRate: null });
+    expect(result.alert.active).toBe(false);
+    expect(result.alert.suppressedReason).toContain("fee rate");
+  });
+
+  it("suppresses alert when fee rate is negative", () => {
+    const result = evaluateAlert({ ...baseInput, feeRate: -0.01 });
+    expect(result.alert.active).toBe(false);
+    expect(result.alert.suppressedReason).toContain("fee rate");
+  });
+
+  it("suppresses alert when fee rate is NaN", () => {
+    const result = evaluateAlert({ ...baseInput, feeRate: NaN });
+    expect(result.alert.active).toBe(false);
+    expect(result.alert.suppressedReason).toContain("fee rate");
+  });
+
+  it("accepts fee-free market (feeRate=0)", () => {
+    const result = evaluateAlert({ ...baseInput, feeRate: 0 });
+    expect(result.alert.suppressedReason).toBe(null);
   });
 });
 

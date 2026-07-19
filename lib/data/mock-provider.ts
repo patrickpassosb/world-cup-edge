@@ -62,6 +62,12 @@ const OUTCOME_RESOLUTION_WORDING: Record<Outcome, string> = {
   away: `${MATCH.awayTeam} to win in the first 90 minutes plus stoppage time (excludes extra time)`,
 };
 
+const OUTCOME_MARKET_QUESTION: Record<Outcome, string> = {
+  home: `Will ${MATCH.homeTeam} win on ${MATCH.matchDate}?`,
+  draw: `Will ${MATCH.homeTeam} vs ${MATCH.awayTeam} end in a draw on ${MATCH.matchDate}?`,
+  away: `Will ${MATCH.awayTeam} win on ${MATCH.matchDate}?`,
+};
+
 function buildEquivalenceInput(outcome: Outcome) {
   return {
     txlineHomeTeam: MATCH.homeTeam,
@@ -73,10 +79,13 @@ function buildEquivalenceInput(outcome: Outcome) {
     polymarketAwayTeam: MATCH.awayTeam,
     polymarketMatchDate: MATCH.matchDate,
     polymarketResolutionWording: OUTCOME_RESOLUTION_WORDING[outcome],
+    polymarketMarketQuestion: OUTCOME_MARKET_QUESTION[outcome],
     selectedTokenLabel: OUTCOME_LABEL_FOR_TOKEN[outcome],
     marketActive: true,
     marketClosed: false,
     acceptingOrders: true,
+    polymarketIdentityValid: true,
+    polymarketIdentityFailures: [],
     outcome,
     expectedHomeTeam: MATCH.homeTeam,
     expectedAwayTeam: MATCH.awayTeam,
@@ -134,6 +143,7 @@ function makeBaseSnapshot(outcome: Outcome = "home"): Snapshot {
       bestBid: null,
       askSize: null,
       feeRate: null,
+      feeExponent: null,
       bookSeq: null,
       timestamp: null,
       receivedAt: null,
@@ -143,6 +153,7 @@ function makeBaseSnapshot(outcome: Outcome = "home"): Snapshot {
       acceptingOrders: true,
       bookEmpty: false,
       yesTokenId: null,
+      marketQuestion: null,
     },
     gap: {
       grossGap: null,
@@ -180,7 +191,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
   const polymarketTimestamp = now - 4_000;
 
   const grossGap = computeGrossGap(txlineProbability, bestAsk);
-  const feePerShare = computeFeePerShare(feeRate, bestAsk);
+  const feePerShare = computeFeePerShare(feeRate, bestAsk, 1);
   const gapAfterFee =
     gapAfterFeeOverride !== undefined
       ? gapAfterFeeOverride
@@ -201,6 +212,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
     bestBid,
     askSize: 500,
     feeRate,
+    feeExponent: 1,
     bookSeq: 1001,
     timestamp: polymarketTimestamp,
     receivedAt: now,
@@ -210,6 +222,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
     acceptingOrders: true,
     bookEmpty: false,
     yesTokenId: OUTCOME_TOKEN_ID[outcome],
+    marketQuestion: OUTCOME_MARKET_QUESTION[outcome],
   };
 
   snapshot.gap = {
@@ -223,6 +236,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
 
   const alertEval = evaluateAlert({
     gapAfterFee,
+    feeRate,
     txlineFresh: snapshot.txline.fresh,
     polymarketFresh: snapshot.polymarket.fresh,
     sourceSkewMs: snapshot.sourceSkewMs,
@@ -260,7 +274,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
   const polymarketTimestamp = now - 2_000;
 
   const grossGap = computeGrossGap(txlineProbability, bestAsk);
-  const feePerShare = computeFeePerShare(feeRate, bestAsk);
+  const feePerShare = computeFeePerShare(feeRate, bestAsk, 1);
   const gapAfterFee = computeGapAfterFee(grossGap, feePerShare);
 
   snapshot.txline = {
@@ -278,6 +292,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
     bestBid,
     askSize: 300,
     feeRate,
+    feeExponent: 1,
     bookSeq: 2042,
     timestamp: polymarketTimestamp,
     receivedAt: now,
@@ -287,6 +302,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
     acceptingOrders: true,
     bookEmpty: false,
     yesTokenId: OUTCOME_TOKEN_ID[outcome],
+    marketQuestion: OUTCOME_MARKET_QUESTION[outcome],
   };
 
   snapshot.gap = {
@@ -300,6 +316,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
 
   const alertEval = evaluateAlert({
     gapAfterFee,
+    feeRate,
     txlineFresh: true,
     polymarketFresh: true,
     sourceSkewMs: snapshot.sourceSkewMs,
@@ -348,6 +365,7 @@ function buildStaleSnapshot(outcome: Outcome = "home"): Snapshot {
     bestBid: OUTCOME_BEST_BID[outcome],
     askSize: 500,
     feeRate: 0.05,
+    feeExponent: 1,
     bookSeq: 1001,
     timestamp: polymarketTimestamp,
     receivedAt: now,
@@ -357,6 +375,7 @@ function buildStaleSnapshot(outcome: Outcome = "home"): Snapshot {
     acceptingOrders: true,
     bookEmpty: false,
     yesTokenId: OUTCOME_TOKEN_ID[outcome],
+    marketQuestion: OUTCOME_MARKET_QUESTION[outcome],
   };
 
   const grossGap = computeGrossGap(OUTCOME_PROBABILITY[outcome], OUTCOME_BEST_ASK[outcome]);
@@ -397,6 +416,7 @@ function buildUnavailableSnapshot(outcome: Outcome = "home"): Snapshot {
     bestBid: null,
     askSize: null,
     feeRate: null,
+    feeExponent: null,
     bookSeq: null,
     timestamp: null,
     receivedAt: now,
@@ -406,6 +426,16 @@ function buildUnavailableSnapshot(outcome: Outcome = "home"): Snapshot {
     acceptingOrders: false,
     bookEmpty: true,
     yesTokenId: null,
+    marketQuestion: null,
+  };
+  snapshot.equivalence = null;
+  snapshot.checks = {
+    teams: false,
+    date: false,
+    rules: false,
+    token: false,
+    marketState: false,
+    fee: false,
   };
   snapshot.alert = {
     active: false,
@@ -427,6 +457,15 @@ function buildErrorSnapshot(outcome: Outcome = "home"): Snapshot {
 
   snapshot.status = "error";
   snapshot.errorMessage = "Failed to fetch snapshot from data source.";
+  snapshot.equivalence = null;
+  snapshot.checks = {
+    teams: false,
+    date: false,
+    rules: false,
+    token: false,
+    marketState: false,
+    fee: false,
+  };
   snapshot.alert = {
     active: false,
     reason: "Fetch error. Alerts suppressed.",

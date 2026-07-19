@@ -7,8 +7,9 @@ import {
   isBookEmpty,
   extractTeamsFromEvent,
   extractMatchDate,
+  extractFeeRate,
 } from "@/lib/polymarket/normalize";
-import type { ClobBook, GammaEvent, GammaMarket } from "@/lib/polymarket/types";
+import type { ClobBook, ClobMarketInfo, GammaEvent, GammaMarket } from "@/lib/polymarket/types";
 
 function makeMarket(overrides: Partial<GammaMarket> = {}): GammaMarket {
   return {
@@ -88,7 +89,7 @@ describe("extractYesToken", () => {
     expect(result.label).toBe("Yes");
   });
 
-  it("finds token by England label", () => {
+  it("accepts team-name label as affirmative when no Yes/True present", () => {
     const result = extractYesToken(
       makeMarket({
         outcomes: '["England", "No"]',
@@ -97,6 +98,27 @@ describe("extractYesToken", () => {
     );
     expect(result.tokenId).toBe("token-eng-123");
     expect(result.label).toBe("England");
+  });
+
+  it("prefers Yes/True over team-name labels", () => {
+    const result = extractYesToken(
+      makeMarket({
+        outcomes: '["Yes", "England", "No"]',
+        clobTokenIds: '["token-yes", "token-eng", "token-no"]',
+      }),
+    );
+    expect(result.tokenId).toBe("token-yes");
+    expect(result.label).toBe("Yes");
+  });
+
+  it("returns null when only No label present", () => {
+    const result = extractYesToken(
+      makeMarket({
+        outcomes: '["No"]',
+        clobTokenIds: '["token-no"]',
+      }),
+    );
+    expect(result.tokenId).toBeNull();
   });
 
   it("returns null when outcomes and tokens have mismatched lengths", () => {
@@ -115,7 +137,7 @@ describe("extractYesToken", () => {
     expect(result.label).toBeNull();
   });
 
-  it("returns null when no Yes or England label found", () => {
+  it("returns null when no affirmative label found (only Draw and No)", () => {
     const result = extractYesToken(
       makeMarket({
         outcomes: '["Draw", "No"]',
@@ -236,5 +258,82 @@ describe("extractMatchDate", () => {
 
   it("returns null for null market", () => {
     expect(extractMatchDate(null)).toBeNull();
+  });
+});
+
+describe("extractFeeRate (CLOB market info)", () => {
+  function makeClobInfo(overrides: Partial<ClobMarketInfo> = {}): ClobMarketInfo {
+    return {
+      conditionId: "0xabc",
+      takerBaseFee: 1000,
+      makerBaseFee: 1000,
+      feesEnabled: null,
+      fd: { r: 0.05, e: 1, to: true },
+      ...overrides,
+    };
+  }
+
+  it("extracts fee rate and exponent 1 from CLOB fd when fd.e=1 and fd.to=true", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo());
+    expect(result.rate).toBeCloseTo(0.05);
+    expect(result.exponent).toBe(1);
+  });
+
+  it("extracts fee rate and exponent 2 when fd.e=2 and fd.to=true", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 2, to: true } }));
+    expect(result.rate).toBeCloseTo(0.05);
+    expect(result.exponent).toBe(2);
+  });
+
+  it("returns nulls when clobInfo is null", () => {
+    const result = extractFeeRate(makeMarket(), null);
+    expect(result.rate).toBeNull();
+    expect(result.exponent).toBeNull();
+  });
+
+  it("returns nulls when fd is null", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: null }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("returns nulls when fd.r is null", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: null, e: 1, to: true } }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("returns nulls when fd.r is negative", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: -0.05, e: 1, to: true } }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("returns nulls when fd.r is not finite", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: Number.NaN, e: 1, to: true } }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("rejects fd.e=3 (only 1 and 2 supported)", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 3, to: true } }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("returns nulls when fd.to is false (not taker-only)", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: false } }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("rejects fd.to=null (unspecified taker-only is unknown, fail closed)", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: null } }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("rejects fd.e=null (unspecified exponent is unknown, fail closed)", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: null, to: true } }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("accepts fee-free markets (r=0, e=1)", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0, e: 1, to: true } }));
+    expect(result.rate).toBe(0);
+    expect(result.exponent).toBe(1);
   });
 });

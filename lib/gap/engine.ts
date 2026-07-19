@@ -18,11 +18,14 @@ export function computeGrossGap(
 export function computeFeePerShare(
   feeRate: number | null,
   bestAsk: number | null,
+  feeExponent: number | null = 1,
 ): number | null {
   if (!isFiniteNumber(feeRate) || !isFiniteNumber(bestAsk)) {
     return null;
   }
-  return feeRate * bestAsk * (1 - bestAsk);
+  const e = isFiniteNumber(feeExponent) ? (feeExponent as number) : 1;
+  const p = bestAsk;
+  return feeRate * Math.pow(p, e) * Math.pow(1 - p, e);
 }
 
 export function computeGapAfterFee(
@@ -37,6 +40,7 @@ export function computeGapAfterFee(
 
 export interface AlertInput {
   gapAfterFee: number | null;
+  feeRate: number | null;
   txlineFresh: boolean;
   polymarketFresh: boolean;
   sourceSkewMs: number | null;
@@ -91,6 +95,8 @@ export function evaluateAlert(input: AlertInput): {
     suppressedReason = "Polymarket market is not accepting orders. Alerts suppressed.";
   } else if (input.bookEmpty) {
     suppressedReason = "Polymarket book is empty. Alerts suppressed.";
+  } else if (input.feeRate === null || !Number.isFinite(input.feeRate) || input.feeRate < 0) {
+    suppressedReason = "Polymarket fee rate is unavailable. Alerts suppressed.";
   } else if (input.gapAfterFee === null || !Number.isFinite(input.gapAfterFee)) {
     suppressedReason = "Gap value is missing or invalid. Alerts suppressed.";
   }

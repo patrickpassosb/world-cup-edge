@@ -32,6 +32,7 @@ export interface PolymarketData {
   bestBid: number | null;
   askSize: number | null;
   feeRate: number | null;
+  feeExponent: number | null;
   bookSeq: number | null;
   timestamp: number | null;
   receivedAt: number | null;
@@ -41,6 +42,7 @@ export interface PolymarketData {
   acceptingOrders: boolean;
   bookEmpty: boolean;
   yesTokenId: string | null;
+  marketQuestion: string | null;
 }
 
 export interface GapResult {
@@ -87,6 +89,7 @@ export interface SessionAlert {
   timestamp: number;
   match: string;
   gapValue: number;
+  grossGapValue: number | null;
   explanation: string;
   dedupeKey: string | null;
 }

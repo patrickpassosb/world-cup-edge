@@ -118,6 +118,22 @@ describe("isRegulationTime1X2", () => {
     expect(isRegulationTime1X2("match result", "90")).toBe(true);
   });
 
+  it("accepts FT as a valid regulation period token", () => {
+    expect(isRegulationTime1X2("1X2", "FT")).toBe(true);
+  });
+
+  it("accepts lowercase ft as a valid regulation period token", () => {
+    expect(isRegulationTime1X2("1X2", "ft")).toBe(true);
+  });
+
+  it("rejects halftime even though it contains ft substring", () => {
+    expect(isRegulationTime1X2("1X2", "halftime")).toBe(false);
+  });
+
+  it("rejects half time with space", () => {
+    expect(isRegulationTime1X2("1X2", "half time")).toBe(false);
+  });
+
   it("returns false for non-1X2 type", () => {
     expect(isRegulationTime1X2("over_under", "regulation")).toBe(false);
   });
@@ -130,8 +146,16 @@ describe("isRegulationTime1X2", () => {
     expect(isRegulationTime1X2(null, "regulation")).toBe(false);
   });
 
-  it("returns true for 1X2 with null marketPeriod (full match)", () => {
-    expect(isRegulationTime1X2("1X2", null)).toBe(true);
+  it("returns true for 1X2_PARTICIPANT_RESULT with null marketPeriod (live API shape)", () => {
+    expect(isRegulationTime1X2("1X2_PARTICIPANT_RESULT", null)).toBe(true);
+  });
+
+  it("returns false for plain 1X2 with null marketPeriod (ambiguous: full match)", () => {
+    expect(isRegulationTime1X2("1X2", null)).toBe(false);
+  });
+
+  it("returns false for moneyline with null marketPeriod (ambiguous: qualification)", () => {
+    expect(isRegulationTime1X2("moneyline", null)).toBe(false);
   });
 });
 

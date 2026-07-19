@@ -106,6 +106,7 @@ export async function GET(request: Request) {
         bestBid: null,
         askSize: null,
         feeRate: null,
+        feeExponent: null,
         bookSeq: null,
         timestamp: null,
         receivedAt: null,
@@ -115,6 +116,7 @@ export async function GET(request: Request) {
         acceptingOrders: false,
         bookEmpty: true,
         yesTokenId: null,
+        marketQuestion: null,
       },
       gap: {
         grossGap: null,

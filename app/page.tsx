@@ -65,7 +65,7 @@ function formatCountdown(kickoffUTC: string): string {
 }
 
 function buildExplanation(snapshot: Snapshot): string {
-  const gap = snapshot.gap.gapAfterFee;
+  const gap = snapshot.gap.grossGap;
   if (gap === null) return "Gap value unavailable.";
   const pp = (gap * 100).toFixed(1);
   const label = snapshot.match.outcomeLabel || "the selected outcome";
@@ -94,6 +94,15 @@ function formatKickoffRelative(kickoffUTC: string): string {
   const month = target.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
   const day = target.getUTCDate();
   return `${month} ${day} ${timeStr}`;
+}
+
+function formatKickoffTimeUTC(kickoffUTC: string): string {
+  if (!kickoffUTC) return "—";
+  const target = new Date(kickoffUTC);
+  if (Number.isNaN(target.getTime())) return "—";
+  const hh = String(target.getUTCHours()).padStart(2, "0");
+  const mm = String(target.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm} UTC`;
 }
 
 function getMarketSlug(match: MatchEntry, outcome: Outcome): string | null {
@@ -200,10 +209,10 @@ function OutcomePickerSection({ selectedMatch, outcome, onSelect }: OutcomePicke
   if (!selectedMatch) return null;
   if (!selectedMatch.hasPolymarketMarket) return null;
 
-  const outcomes: { value: Outcome; label: string }[] = [
-    { value: "home", label: selectedMatch.homeTeam },
-    { value: "draw", label: "Draw" },
-    { value: "away", label: selectedMatch.awayTeam },
+  const outcomes: { value: Outcome; label: string; disabled: boolean }[] = [
+    { value: "home", label: selectedMatch.homeTeam, disabled: !selectedMatch.polymarketHomeMarketSlug },
+    { value: "draw", label: "Draw", disabled: !selectedMatch.polymarketDrawMarketSlug },
+    { value: "away", label: selectedMatch.awayTeam, disabled: !selectedMatch.polymarketAwayMarketSlug },
   ];
 
   return (
@@ -212,19 +221,22 @@ function OutcomePickerSection({ selectedMatch, outcome, onSelect }: OutcomePicke
         Outcome
       </span>
       <div className="flex gap-2">
-        {outcomes.map(({ value, label }) => {
+        {outcomes.map(({ value, label, disabled }) => {
           const isActive = outcome === value;
           return (
             <button
               key={value}
               type="button"
-              onClick={() => onSelect(value)}
+              onClick={() => !disabled && onSelect(value)}
               aria-label={`Select outcome: ${label}`}
               aria-pressed={isActive}
+              disabled={disabled}
               className={`border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.05em] transition-colors duration-100 ${
-                isActive
-                  ? "border-primary bg-primary text-on-primary"
-                  : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                disabled
+                  ? "border-outline-variant text-on-surface-variant opacity-30 cursor-not-allowed"
+                  : isActive
+                    ? "border-primary bg-primary text-on-primary"
+                    : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
               }`}
             >
               {label}
@@ -254,6 +266,7 @@ function DashboardContent() {
   const [selectedMatch, setSelectedMatch] = useState<MatchEntry | null>(null);
   const [outcome, setOutcome] = useState<Outcome>("home");
   const lastDedupeKeyRef = useRef<string | null>(null);
+  const selectionTokenRef = useRef<string>("");
 
   const searchParams = useSearchParams();
   const isReplay = searchParams?.get("demo") === "replay";
@@ -298,19 +311,18 @@ function DashboardContent() {
       return () => cancelAnimationFrame(raf);
     }
 
-    const controller = new AbortController();
-    let timedOut = false;
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, (POLL_INTERVAL_MS * 2) + 1000);
-
     const raf = requestAnimationFrame(() => setSnapshot(null));
     lastDedupeKeyRef.current = null;
 
     const marketSlug = getMarketSlug(selectedMatch, outcome);
+    const currentSelectionToken = `${selectedMatch.fixtureId}::${outcome}`;
+    selectionTokenRef.current = currentSelectionToken;
 
+    let pollingAborted = false;
     const doPoll = async () => {
+      if (pollingAborted) return;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), (POLL_INTERVAL_MS * 2) + 1000);
       try {
         const params = new URLSearchParams();
         params.set("fixtureId", String(selectedMatch.fixtureId));
@@ -330,7 +342,7 @@ function DashboardContent() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: Snapshot = await res.json();
-        if (timedOut) return;
+        if (selectionTokenRef.current !== currentSelectionToken) return;
         setSnapshot(data);
 
         if (data.alert.active && !txlineOnly) {
@@ -342,6 +354,7 @@ function DashboardContent() {
               timestamp: Date.now(),
               match: data.match.name,
               gapValue: data.gap.gapAfterFee ?? 0,
+              grossGapValue: data.gap.grossGap ?? null,
               explanation: buildExplanation(data),
               dedupeKey,
             };
@@ -349,8 +362,9 @@ function DashboardContent() {
           }
         }
       } catch (err) {
-        if (timedOut || controller.signal.aborted) return;
+        if (controller.signal.aborted) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
+        if (selectionTokenRef.current !== currentSelectionToken) return;
         setSnapshot((prev) => {
           if (prev && prev.status !== "error") {
             return {
@@ -359,17 +373,72 @@ function DashboardContent() {
               errorMessage: "Failed to reach /api/snapshot.",
             } as Snapshot;
           }
-          return prev;
+          return {
+            status: "error",
+            alertKind: "no-alert",
+            match: {
+              name: `${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`,
+              date: selectedMatch.kickoffUTC.slice(0, 10),
+              kickoffUTC: selectedMatch.kickoffUTC,
+              rules: "regulation-time 1X2",
+              outcome,
+              outcomeLabel: outcome === "draw" ? "Draw" : outcome === "away" ? selectedMatch.awayTeam : selectedMatch.homeTeam,
+              homeTeam: selectedMatch.homeTeam,
+              awayTeam: selectedMatch.awayTeam,
+            },
+            txline: {
+              probability: null,
+              messageId: null,
+              timestamp: null,
+              receivedAt: null,
+              fresh: false,
+              serviceLevel: 0,
+              delayed: false,
+            },
+            polymarket: {
+              bestAsk: null,
+              bestBid: null,
+              askSize: null,
+              feeRate: null,
+              bookSeq: null,
+              timestamp: null,
+              receivedAt: null,
+              fresh: false,
+              marketActive: false,
+              marketClosed: false,
+              acceptingOrders: false,
+              bookEmpty: true,
+              yesTokenId: null,
+              marketQuestion: null,
+            },
+            gap: { grossGap: null, feePerShare: null, gapAfterFee: null, threshold: 0.05 },
+            alert: {
+              active: false,
+              reason: "Fetch error. Alerts suppressed.",
+              consecutiveSamples: 0,
+              suppressedReason: "Fetch error. Alerts suppressed.",
+              phase: "IDLE",
+              lastAlertTime: null,
+              cooldownRemainingMs: null,
+              dedupeKey: null,
+            },
+            checks: { teams: false, date: false, rules: false, token: false, marketState: false, fee: false },
+            equivalence: null,
+            sourceSkewMs: null,
+            receivedAt: Date.now(),
+            errorMessage: "Failed to reach /api/snapshot.",
+          } as Snapshot;
         });
+      } finally {
+        clearTimeout(timeout);
       }
     };
 
     doPoll();
     const interval = setInterval(doPoll, POLL_INTERVAL_MS);
     return () => {
-      clearTimeout(timeout);
+      pollingAborted = true;
       cancelAnimationFrame(raf);
-      controller.abort();
       clearInterval(interval);
     };
   }, [selectedMatch, outcome, txlineOnly, isReplay]);
@@ -459,6 +528,11 @@ function HeaderSection({
     ? selectedMatch.kickoffUTC.slice(0, 10)
     : snapshot?.match.date ?? MATCH.matchDate;
   const matchRules = snapshot?.match.rules ?? MATCH.rules;
+  const kickoffTime = selectedMatch
+    ? formatKickoffTimeUTC(selectedMatch.kickoffUTC)
+    : snapshot?.match.kickoffUTC
+      ? formatKickoffTimeUTC(snapshot.match.kickoffUTC)
+      : "19:00 UTC";
 
   return (
     <section className="mb-8 border-b border-outline-variant pb-1 md:mb-12">
@@ -468,7 +542,7 @@ function HeaderSection({
             {matchName}
           </h1>
           <p className="text-base italic text-on-surface-variant">
-            {matchDate} · 19:00 UTC · {matchRules}
+            {matchDate} · {kickoffTime} · {matchRules}
           </p>
         </div>
         <div className="text-left md:text-right">
@@ -526,7 +600,8 @@ function FocalPointSection({
     );
   }
 
-  const gapValue = snapshot?.gap.gapAfterFee ?? null;
+  const grossGap = snapshot?.gap.grossGap ?? null;
+  const gapAfterFee = snapshot?.gap.gapAfterFee ?? null;
   const isAlert = displayState === "alert";
   const isUnavailable = displayState === "unavailable";
   const gapColor = isAlert ? "text-alert" : "text-primary";
@@ -539,7 +614,7 @@ function FocalPointSection({
         <p
           className={`mb-2 font-mono text-[64px] font-bold leading-none tracking-tight tabular-nums md:text-[96px] ${gapColor}`}
         >
-          {formatPp(gapValue)}
+          {formatPp(grossGap)}
         </p>
         <h2 className="mb-4 font-sans text-xs font-bold uppercase tracking-[0.2em] text-on-surface">
           {isAlert ? `Consensus Gap Alert — ${outcomeLabel} to win in regulation` : `Gross Consensus Gap — ${outcomeLabel} to win in regulation`}
@@ -547,17 +622,37 @@ function FocalPointSection({
         <p className="mx-auto max-w-xl border-t border-on-surface pt-4 text-base leading-6 text-on-surface">
           {explanation}
         </p>
+        {gapAfterFee !== null && grossGap !== null && (
+          <p className="mt-2 text-sm text-on-surface-variant">
+            After fee: {formatPp(gapAfterFee)}
+          </p>
+        )}
         {isAlert && (
           <p className="mt-3 text-sm font-medium text-alert">
             <AlertTriangle className="mr-1 inline-block h-4 w-4 align-text-bottom" />
-            Gap exceeds {formatPp(snapshot?.gap.threshold ?? 0.05)} threshold after fee. Not an arbitrage guarantee.
+            Gap after fee exceeds {formatPp(snapshot?.gap.threshold ?? 0.05)} threshold. Not an arbitrage guarantee.
           </p>
         )}
         {isUnavailable && (
-          <p className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-stale">
-            <WifiOff className="h-4 w-4" aria-hidden="true" />
-            {snapshot?.errorMessage ?? "Source unavailable. No comparison generated."}
-          </p>
+          <div className="mt-3 inline-flex flex-col items-center gap-1 text-sm font-medium text-stale">
+            <div className="inline-flex items-center gap-2">
+              <WifiOff className="h-4 w-4" aria-hidden="true" />
+              <span>{snapshot?.errorMessage ?? "Source unavailable. No comparison generated."}</span>
+            </div>
+            {snapshot?.alert.suppressedReason && (
+              <span className="text-xs text-on-surface-variant">{snapshot.alert.suppressedReason}</span>
+            )}
+            {snapshot?.equivalence && !snapshot.equivalence.passed && snapshot.equivalence.failures.length > 0 && (
+              <ul className="mt-1 list-disc text-left text-xs text-on-surface-variant">
+                {snapshot.equivalence.failures.map((failure) => (
+                  <li key={failure}>{failure}</li>
+                ))}
+              </ul>
+            )}
+            {snapshot?.equivalence && snapshot.equivalence.passed && snapshot?.polymarket.feeRate === null && (
+              <span className="text-xs text-on-surface-variant">Polymarket fee rate unavailable.</span>
+            )}
+          </div>
         )}
       </div>
     </section>
@@ -637,7 +732,9 @@ function TxlineColumn({
         <CheckRow passed={checks?.teams ?? false} label="Teams matched" />
         <CheckRow passed={checks?.date ?? false} label="Date matched" />
         <CheckRow passed={checks?.rules ?? false} label="Rules: regulation-time 1X2" />
+        <CheckRow passed={checks?.token ?? false} label="Token matches outcome" />
         <CheckRow passed={checks?.marketState ?? false} label="Market state: open" />
+        <CheckRow passed={checks?.fee ?? false} label="Fee rate available" />
       </div>
     </div>
   );
@@ -941,10 +1038,11 @@ function SessionAlertsSection({
       </div>
       <div className="overflow-x-auto">
         <div className="font-mono text-sm md:min-h-[198px] md:min-w-[680px]">
-          <div className="grid grid-cols-[72px_120px_82px_1fr] border-b border-outline-variant py-2 uppercase tracking-[0.04em] text-on-surface-variant md:grid-cols-[100px_150px_120px_1fr]">
+          <div className="grid grid-cols-[72px_120px_82px_82px_1fr] border-b border-outline-variant py-2 uppercase tracking-[0.04em] text-on-surface-variant md:grid-cols-[100px_150px_110px_110px_1fr]">
             <span>Time</span>
             <span>Match</span>
-            <span>Gap</span>
+            <span>Gross</span>
+            <span>After fee</span>
             <span className="hidden md:block">Summary</span>
           </div>
           {alerts.length === 0 ? (
@@ -956,7 +1054,7 @@ function SessionAlertsSection({
             alerts.map((entry) => (
               <div
                 key={entry.id}
-                className="grid grid-cols-[72px_120px_82px_1fr] border-b border-outline-variant py-4 text-on-surface md:grid-cols-[100px_150px_120px_1fr]"
+                className="grid grid-cols-[72px_120px_82px_82px_1fr] border-b border-outline-variant py-4 text-on-surface md:grid-cols-[100px_150px_110px_110px_1fr]"
               >
                 <span className="text-on-surface-variant">
                   {new Date(entry.timestamp).toLocaleTimeString("en-US", {
@@ -966,7 +1064,8 @@ function SessionAlertsSection({
                   })}
                 </span>
                 <span className="font-bold">{entry.match}</span>
-                <span className="font-bold text-primary">{formatPp(entry.gapValue)}</span>
+                <span className="font-bold text-primary">{formatPp(entry.grossGapValue)}</span>
+                <span className="font-bold text-on-surface-variant">{formatPp(entry.gapValue)}</span>
                 <span className="hidden text-on-surface-variant md:block">{entry.explanation}</span>
               </div>
             ))
