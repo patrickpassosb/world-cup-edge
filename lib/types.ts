@@ -88,6 +88,7 @@ export interface SessionAlert {
   timestamp: number;
   match: string;
   gapValue: number;
+  grossGapValue: number | null;
   explanation: string;
   dedupeKey: string | null;
 }

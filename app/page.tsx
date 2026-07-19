@@ -307,19 +307,16 @@ function DashboardContent() {
       return () => cancelAnimationFrame(raf);
     }
 
-    const controller = new AbortController();
-    let timedOut = false;
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, (POLL_INTERVAL_MS * 2) + 1000);
-
     const raf = requestAnimationFrame(() => setSnapshot(null));
     lastDedupeKeyRef.current = null;
 
     const marketSlug = getMarketSlug(selectedMatch, outcome);
 
+    let pollingAborted = false;
     const doPoll = async () => {
+      if (pollingAborted) return;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), (POLL_INTERVAL_MS * 2) + 1000);
       try {
         const params = new URLSearchParams();
         params.set("fixtureId", String(selectedMatch.fixtureId));
@@ -339,7 +336,6 @@ function DashboardContent() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: Snapshot = await res.json();
-        if (timedOut) return;
         setSnapshot(data);
 
         if (data.alert.active && !txlineOnly) {
@@ -351,6 +347,7 @@ function DashboardContent() {
               timestamp: Date.now(),
               match: data.match.name,
               gapValue: data.gap.gapAfterFee ?? 0,
+              grossGapValue: data.gap.grossGap ?? null,
               explanation: buildExplanation(data),
               dedupeKey,
             };
@@ -358,7 +355,7 @@ function DashboardContent() {
           }
         }
       } catch (err) {
-        if (timedOut || controller.signal.aborted) return;
+        if (controller.signal.aborted) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
         setSnapshot((prev) => {
           if (prev && prev.status !== "error") {
@@ -368,17 +365,72 @@ function DashboardContent() {
               errorMessage: "Failed to reach /api/snapshot.",
             } as Snapshot;
           }
-          return prev;
+          return {
+            status: "error",
+            alertKind: "no-alert",
+            match: {
+              name: `${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`,
+              date: selectedMatch.kickoffUTC.slice(0, 10),
+              kickoffUTC: selectedMatch.kickoffUTC,
+              rules: "regulation-time 1X2",
+              outcome,
+              outcomeLabel: outcome === "draw" ? "Draw" : outcome === "away" ? selectedMatch.awayTeam : selectedMatch.homeTeam,
+              homeTeam: selectedMatch.homeTeam,
+              awayTeam: selectedMatch.awayTeam,
+            },
+            txline: {
+              probability: null,
+              messageId: null,
+              timestamp: null,
+              receivedAt: null,
+              fresh: false,
+              serviceLevel: 0,
+              delayed: false,
+            },
+            polymarket: {
+              bestAsk: null,
+              bestBid: null,
+              askSize: null,
+              feeRate: null,
+              bookSeq: null,
+              timestamp: null,
+              receivedAt: null,
+              fresh: false,
+              marketActive: false,
+              marketClosed: false,
+              acceptingOrders: false,
+              bookEmpty: true,
+              yesTokenId: null,
+              marketQuestion: null,
+            },
+            gap: { grossGap: null, feePerShare: null, gapAfterFee: null, threshold: 0.05 },
+            alert: {
+              active: false,
+              reason: "Fetch error. Alerts suppressed.",
+              consecutiveSamples: 0,
+              suppressedReason: "Fetch error. Alerts suppressed.",
+              phase: "IDLE",
+              lastAlertTime: null,
+              cooldownRemainingMs: null,
+              dedupeKey: null,
+            },
+            checks: { teams: false, date: false, rules: false, token: false, marketState: false, fee: false },
+            equivalence: null,
+            sourceSkewMs: null,
+            receivedAt: Date.now(),
+            errorMessage: "Failed to reach /api/snapshot.",
+          } as Snapshot;
         });
+      } finally {
+        clearTimeout(timeout);
       }
     };
 
     doPoll();
     const interval = setInterval(doPoll, POLL_INTERVAL_MS);
     return () => {
-      clearTimeout(timeout);
+      pollingAborted = true;
       cancelAnimationFrame(raf);
-      controller.abort();
       clearInterval(interval);
     };
   }, [selectedMatch, outcome, txlineOnly, isReplay]);
@@ -541,6 +593,7 @@ function FocalPointSection({
   }
 
   const grossGap = snapshot?.gap.grossGap ?? null;
+  const gapAfterFee = snapshot?.gap.gapAfterFee ?? null;
   const isAlert = displayState === "alert";
   const isUnavailable = displayState === "unavailable";
   const gapColor = isAlert ? "text-alert" : "text-primary";
@@ -561,10 +614,15 @@ function FocalPointSection({
         <p className="mx-auto max-w-xl border-t border-on-surface pt-4 text-base leading-6 text-on-surface">
           {explanation}
         </p>
+        {gapAfterFee !== null && grossGap !== null && (
+          <p className="mt-2 text-sm text-on-surface-variant">
+            After fee: {formatPp(gapAfterFee)}
+          </p>
+        )}
         {isAlert && (
           <p className="mt-3 text-sm font-medium text-alert">
             <AlertTriangle className="mr-1 inline-block h-4 w-4 align-text-bottom" />
-            Gap exceeds {formatPp(snapshot?.gap.threshold ?? 0.05)} threshold after fee. Not an arbitrage guarantee.
+            Gap after fee exceeds {formatPp(snapshot?.gap.threshold ?? 0.05)} threshold. Not an arbitrage guarantee.
           </p>
         )}
         {isUnavailable && (
@@ -573,6 +631,9 @@ function FocalPointSection({
               <WifiOff className="h-4 w-4" aria-hidden="true" />
               <span>{snapshot?.errorMessage ?? "Source unavailable. No comparison generated."}</span>
             </div>
+            {snapshot?.alert.suppressedReason && (
+              <span className="text-xs text-on-surface-variant">{snapshot.alert.suppressedReason}</span>
+            )}
             {snapshot?.equivalence && !snapshot.equivalence.passed && snapshot.equivalence.failures.length > 0 && (
               <ul className="mt-1 list-disc text-left text-xs text-on-surface-variant">
                 {snapshot.equivalence.failures.map((failure) => (
@@ -969,10 +1030,11 @@ function SessionAlertsSection({
       </div>
       <div className="overflow-x-auto">
         <div className="font-mono text-sm md:min-h-[198px] md:min-w-[680px]">
-          <div className="grid grid-cols-[72px_120px_82px_1fr] border-b border-outline-variant py-2 uppercase tracking-[0.04em] text-on-surface-variant md:grid-cols-[100px_150px_120px_1fr]">
+          <div className="grid grid-cols-[72px_120px_82px_82px_1fr] border-b border-outline-variant py-2 uppercase tracking-[0.04em] text-on-surface-variant md:grid-cols-[100px_150px_110px_110px_1fr]">
             <span>Time</span>
             <span>Match</span>
-            <span>Gap</span>
+            <span>Gross</span>
+            <span>After fee</span>
             <span className="hidden md:block">Summary</span>
           </div>
           {alerts.length === 0 ? (
@@ -984,7 +1046,7 @@ function SessionAlertsSection({
             alerts.map((entry) => (
               <div
                 key={entry.id}
-                className="grid grid-cols-[72px_120px_82px_1fr] border-b border-outline-variant py-4 text-on-surface md:grid-cols-[100px_150px_120px_1fr]"
+                className="grid grid-cols-[72px_120px_82px_82px_1fr] border-b border-outline-variant py-4 text-on-surface md:grid-cols-[100px_150px_110px_110px_1fr]"
               >
                 <span className="text-on-surface-variant">
                   {new Date(entry.timestamp).toLocaleTimeString("en-US", {
@@ -994,7 +1056,8 @@ function SessionAlertsSection({
                   })}
                 </span>
                 <span className="font-bold">{entry.match}</span>
-                <span className="font-bold text-primary">{formatPp(entry.gapValue)}</span>
+                <span className="font-bold text-primary">{formatPp(entry.grossGapValue)}</span>
+                <span className="font-bold text-on-surface-variant">{formatPp(entry.gapValue)}</span>
                 <span className="hidden text-on-surface-variant md:block">{entry.explanation}</span>
               </div>
             ))
