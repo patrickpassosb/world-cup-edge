@@ -398,6 +398,30 @@ describe("checkEquivalence overall", () => {
     expect(result.checks.rules).toBe(false);
   });
 
+  it("accepts FT as a valid regulation period token", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineMarketPeriod: "FT",
+    });
+    expect(result.checks.rules).toBe(true);
+  });
+
+  it("rejects halftime market period even though it contains ft", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineMarketPeriod: "halftime",
+    });
+    expect(result.checks.rules).toBe(false);
+  });
+
+  it("rejects half time market period with space", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineMarketPeriod: "half time",
+    });
+    expect(result.checks.rules).toBe(false);
+  });
+
   it("rejects qualification market period", () => {
     const result = checkEquivalence({
       ...VALID_INPUT,

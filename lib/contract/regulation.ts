@@ -12,12 +12,15 @@ const REGULATION_PERIODS = [
   "regulation",
   "full time",
   "fulltime",
+  "ft",
   "90",
   "regular",
 ];
 
 const EXCLUDED_PERIOD_FRAGMENTS = [
   "half=",
+  "half time",
+  "halftime",
   "first half",
   "second half",
   "extra time",
