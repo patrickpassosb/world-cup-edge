@@ -130,8 +130,16 @@ describe("isRegulationTime1X2", () => {
     expect(isRegulationTime1X2(null, "regulation")).toBe(false);
   });
 
-  it("returns true for 1X2 with null marketPeriod (full match)", () => {
-    expect(isRegulationTime1X2("1X2", null)).toBe(true);
+  it("returns true for 1X2_PARTICIPANT_RESULT with null marketPeriod (live API shape)", () => {
+    expect(isRegulationTime1X2("1X2_PARTICIPANT_RESULT", null)).toBe(true);
+  });
+
+  it("returns false for plain 1X2 with null marketPeriod (ambiguous: full match)", () => {
+    expect(isRegulationTime1X2("1X2", null)).toBe(false);
+  });
+
+  it("returns false for moneyline with null marketPeriod (ambiguous: qualification)", () => {
+    expect(isRegulationTime1X2("moneyline", null)).toBe(false);
   });
 });
 

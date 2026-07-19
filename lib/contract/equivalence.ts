@@ -1,3 +1,4 @@
+import { isRegulationTime1X2 } from "@/lib/contract/regulation";
 import type { EquivalenceResult, Outcome } from "@/lib/types";
 
 export interface EquivalenceInput {
@@ -46,33 +47,6 @@ function datesMatch(a: string | null, b: string | null): boolean {
   return da === db;
 }
 
-function isRegulationTime1X2(marketType: string | null, marketPeriod: string | null): boolean {
-  if (marketType === null) return false;
-  const mt = marketType.toLowerCase();
-  const is1x2 =
-    mt.includes("1x2") ||
-    mt.includes("participant_result") ||
-    mt.includes("3way") ||
-    mt.includes("match result") ||
-    mt.includes("moneyline") ||
-    mt.includes("full time result") ||
-    mt.includes("ft result");
-  if (!is1x2) return false;
-  if (marketPeriod === null || marketPeriod === undefined || marketPeriod === "") return true;
-  const mp = marketPeriod.toLowerCase();
-  if (mp.includes("half=") || mp.includes("first half") || mp.includes("second half")) return false;
-  if (mp.includes("extra time") || mp.includes("extra_time") || mp.includes("overtime")) return false;
-  return (
-    mp.includes("regulation") ||
-    mp.includes("full time") ||
-    mp.includes("fulltime") ||
-    mp.includes("ft") ||
-    mp.includes("90") ||
-    mp.includes("regular") ||
-    mp === ""
-  );
-}
-
 function resolutionConfirmsRegulation(wording: string | null): boolean {
   if (wording === null) return false;
   const w = wording.toLowerCase();
@@ -82,7 +56,9 @@ function resolutionConfirmsRegulation(wording: string | null): boolean {
     w.includes("first 90") ||
     w.includes("stoppage");
   const excludesExtraTime = !w.includes("extra time") || w.includes("excludes extra time");
-  return hasRegulation && excludesExtraTime;
+  const excludesQualification =
+    !w.includes("qualify") && !w.includes("qualification") && !w.includes("advance");
+  return hasRegulation && excludesExtraTime && excludesQualification;
 }
 
 function tokenMatchesOutcome(
@@ -101,29 +77,43 @@ function tokenMatchesOutcome(
     return l.includes("draw");
   }
   if (l === "yes" || l === "true") {
-    return questionConfirmsTeam(marketQuestion, expectedTeam);
+    return questionConfirmsWin(marketQuestion, expectedTeam);
   }
   if (expectedTeam === null) return false;
   const team = normalizeTeam(expectedTeam);
   return l.includes(team);
 }
 
-function questionConfirmsTeam(
+function questionConfirmsWin(
   question: string | null,
   expectedTeam: string | null,
 ): boolean {
   if (question === null || expectedTeam === null) return false;
-  const q = normalizeTeam(question);
+  const q = question.toLowerCase();
+  if (q.includes("draw") || q.includes("qualify") || q.includes("qualification") || q.includes("advance")) {
+    return false;
+  }
   const team = normalizeTeam(expectedTeam);
   if (team === "") return false;
-  return q.includes(team);
+  const winPattern = new RegExp(`\\b${escapeRegex(team)}\\b.*\\bwin\\b`, "i");
+  return winPattern.test(q);
 }
 
 function questionConfirmsDraw(question: string | null): boolean {
   if (question === null) return false;
   const q = question.toLowerCase();
-  return q.includes("draw");
+  if (!q.includes("draw")) return false;
+  if (q.includes("win") && !q.includes("end in a draw") && !q.includes("finish in a draw")) {
+    return false;
+  }
+  return true;
 }
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export { isRegulationTime1X2 };
 
 export function checkEquivalence(input: EquivalenceInput): EquivalenceResult {
   const checks = {

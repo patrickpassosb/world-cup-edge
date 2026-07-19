@@ -1,4 +1,5 @@
 import { CONFIG } from "@/lib/config";
+import { isRegulationTime1X2 as isRegulationTime1X2Shared } from "@/lib/contract/regulation";
 import type { Fixture, NormalizedTxline, OddsPayload } from "@/lib/txline/types";
 import type { Outcome } from "@/lib/types";
 
@@ -32,21 +33,7 @@ export function isRegulationTime1X2(
   superOddsType: string | null,
   marketPeriod: string | null,
 ): boolean {
-  if (!superOddsType) return false;
-  const sot = superOddsType.toLowerCase();
-  const is1x2 =
-    sot.includes("1x2") ||
-    sot.includes("participant_result") ||
-    sot.includes("3way") ||
-    sot.includes("match result") ||
-    sot.includes("moneyline") ||
-    sot.includes("full time result") ||
-    sot.includes("ft result");
-  if (!is1x2) return false;
-  if (marketPeriod === null || marketPeriod === undefined || marketPeriod === "") return true;
-  const mp = marketPeriod.toLowerCase();
-  if (mp.includes("half=") || mp.includes("first half") || mp.includes("second half")) return false;
-  return mp.includes("regulation") || mp.includes("full time") || mp.includes("fulltime") || mp.includes("ft") || mp.includes("90") || mp.includes("regular") || mp === "";
+  return isRegulationTime1X2Shared(superOddsType, marketPeriod);
 }
 
 export function findOutcomeProbability(
@@ -84,7 +71,7 @@ export function validateDistribution(
   pct: string[],
   tolerance = 0.05,
 ): boolean {
-  if (pct.length < 2) return false;
+  if (pct.length !== 3) return false;
   const probs: number[] = [];
   for (const p of pct) {
     const prob = pctToProbability(p);
