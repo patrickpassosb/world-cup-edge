@@ -148,6 +148,8 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
       book: makeBook(),
       yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
       clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
     });
 
     const provider = await makeProvider();
@@ -174,6 +176,8 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
       book: makeBook(),
       yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
       clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
     });
 
     const provider = await makeProvider();
@@ -198,6 +202,8 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
       book: makeBook(),
       yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
       clobInfo: makeClobInfo({ fd: null }),
+      identityValid: true,
+      identityFailures: [],
     });
 
     const provider = await makeProvider();
@@ -223,6 +229,8 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
       book: makeBook(),
       yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
       clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
     });
 
     const provider = await makeProvider();
@@ -243,6 +251,8 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
       book: makeBook(),
       yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
       clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
     });
 
     const provider = await makeProvider();
@@ -263,6 +273,8 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
       book: makeBook(),
       yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
       clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
     });
 
     const provider = await makeProvider();
@@ -282,6 +294,8 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
       book: makeBook(),
       yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
       clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
     });
 
     const provider = await makeProvider();
@@ -292,5 +306,82 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
     expect(snapshot.checks.rules).toBe(false);
     expect(snapshot.checks.teams).toBe(true);
     expect(snapshot.checks.date).toBe(true);
+  });
+
+  it("nulls gap when identity check fails (mismatched condition ID)", async () => {
+    fetchOddsForMatchMock.mockResolvedValue({
+      fixture: makeFixture(),
+      odds: [makeOdds()],
+    });
+    fetchPolymarketDataMock.mockResolvedValue({
+      event: makeEvent(),
+      market: makeMarket(),
+      book: makeBook(),
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo({ conditionId: "0xdifferent" }),
+      identityValid: false,
+      identityFailures: ["CLOB fee condition ID does not match market condition ID."],
+    });
+
+    const provider = await makeProvider();
+    const snapshot = await provider.getSnapshot();
+
+    expect(snapshot.equivalence!.passed).toBe(false);
+    expect(snapshot.gap.grossGap).toBeNull();
+    expect(snapshot.gap.gapAfterFee).toBeNull();
+    expect(snapshot.equivalence!.failures).toContain(
+      "CLOB fee condition ID does not match market condition ID.",
+    );
+    expect(snapshot.alert.active).toBe(false);
+  });
+
+  it("nulls gap when book asset_id does not match YES token", async () => {
+    fetchOddsForMatchMock.mockResolvedValue({
+      fixture: makeFixture(),
+      odds: [makeOdds()],
+    });
+    fetchPolymarketDataMock.mockResolvedValue({
+      event: makeEvent(),
+      market: makeMarket(),
+      book: { ...makeBook(), asset_id: "wrong-token-id" },
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo(),
+      identityValid: false,
+      identityFailures: ["CLOB book asset_id does not match the selected YES token."],
+    });
+
+    const provider = await makeProvider();
+    const snapshot = await provider.getSnapshot();
+
+    expect(snapshot.equivalence!.passed).toBe(false);
+    expect(snapshot.gap.grossGap).toBeNull();
+    expect(snapshot.equivalence!.failures).toContain(
+      "CLOB book asset_id does not match the selected YES token.",
+    );
+  });
+
+  it("nulls gap when market is not part of the event", async () => {
+    fetchOddsForMatchMock.mockResolvedValue({
+      fixture: makeFixture(),
+      odds: [makeOdds()],
+    });
+    const otherMarket = makeMarket({ slug: "other-market", conditionId: "0xother" });
+    fetchPolymarketDataMock.mockResolvedValue({
+      event: makeEvent({ markets: [otherMarket] }),
+      market: makeMarket(),
+      book: makeBook(),
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo(),
+      identityValid: false,
+      identityFailures: ["Polymarket market is not part of the selected event."],
+    });
+
+    const provider = await makeProvider();
+    const snapshot = await provider.getSnapshot();
+
+    expect(snapshot.equivalence!.passed).toBe(false);
+    expect(snapshot.equivalence!.failures).toContain(
+      "Polymarket market is not part of the selected event.",
+    );
   });
 });

@@ -84,6 +84,8 @@ function buildEquivalenceInput(outcome: Outcome) {
     marketActive: true,
     marketClosed: false,
     acceptingOrders: true,
+    polymarketIdentityValid: true,
+    polymarketIdentityFailures: [],
     outcome,
     expectedHomeTeam: MATCH.homeTeam,
     expectedAwayTeam: MATCH.awayTeam,

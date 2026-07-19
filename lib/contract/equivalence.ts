@@ -16,6 +16,8 @@ export interface EquivalenceInput {
   marketActive: boolean;
   marketClosed: boolean;
   acceptingOrders: boolean;
+  polymarketIdentityValid: boolean;
+  polymarketIdentityFailures: string[];
   outcome: Outcome;
   expectedHomeTeam: string | null;
   expectedAwayTeam: string | null;
@@ -167,8 +169,12 @@ export function checkEquivalence(input: EquivalenceInput): EquivalenceResult {
     failures.push("Polymarket market is not open and accepting orders.");
   }
 
+  if (!input.polymarketIdentityValid) {
+    failures.push(...input.polymarketIdentityFailures);
+  }
+
   return {
-    passed: checks.teams && checks.date && checks.rules && checks.token && checks.marketState,
+    passed: checks.teams && checks.date && checks.rules && checks.token && checks.marketState && input.polymarketIdentityValid,
     checks,
     failures,
   };

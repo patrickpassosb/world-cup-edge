@@ -16,6 +16,8 @@ const VALID_INPUT = {
   marketActive: true,
   marketClosed: false,
   acceptingOrders: true,
+  polymarketIdentityValid: true,
+  polymarketIdentityFailures: [],
   outcome: "home" as const,
   expectedHomeTeam: "England",
   expectedAwayTeam: "France",

@@ -21,25 +21,27 @@ async function fetchJson<T>(url: string, timeoutMs = 10_000): Promise<T> {
 }
 
 export async function fetchEvent(slug: string): Promise<GammaEvent | null> {
+  if (!slug) return null;
   const events = await fetchJson<GammaEvent[]>(
     `${GAMMA_BASE}/events?slug=${encodeURIComponent(slug)}`,
   );
-  if (!Array.isArray(events) || events.length === 0) return null;
-  return events[0] ?? null;
+  if (!Array.isArray(events)) return null;
+  return events.find((e) => e.slug === slug) ?? null;
 }
 
 export async function fetchMarket(slug: string): Promise<GammaMarket | null> {
+  if (!slug) return null;
   const markets = await fetchJson<GammaMarket[]>(
     `${GAMMA_BASE}/markets?slug=${encodeURIComponent(slug)}`,
   );
-  if (Array.isArray(markets) && markets.length > 0) {
-    return markets[0] ?? null;
+  if (Array.isArray(markets)) {
+    const exact = markets.find((m) => m.slug === slug);
+    if (exact) return exact;
   }
-  const eventSlug = slug.replace(/-[a-z]{3}$/, "");
+  const eventSlug = slug.replace(/-[a-z]{3,}$/i, "");
   const event = await fetchEvent(eventSlug);
-  if (event && event.markets && event.markets.length > 0) {
-    const match = event.markets.find((m) => m.slug === slug);
-    return match ?? null;
+  if (event && Array.isArray(event.markets)) {
+    return event.markets.find((m) => m.slug === slug) ?? null;
   }
   return null;
 }
@@ -70,8 +72,9 @@ export async function fetchClobMarketInfo(
     const tbf = raw.tbf ?? raw.taker_base_fee ?? raw.takerBaseFee;
     const mbf = raw.mbf ?? raw.maker_base_fee ?? raw.makerBaseFee;
     const feesEnabled = raw.feesEnabled ?? (raw.ao === true ? null : null);
+    const responseConditionId = String(raw.c ?? raw.condition_id ?? raw.conditionId ?? "");
     return {
-      conditionId: String(raw.c ?? raw.condition_id ?? raw.conditionId ?? conditionId),
+      conditionId: responseConditionId || conditionId,
       takerBaseFee: Number(tbf ?? 0),
       makerBaseFee: Number(mbf ?? 0),
       feesEnabled: typeof feesEnabled === "boolean" ? feesEnabled : null,
@@ -88,6 +91,8 @@ export interface PolymarketFetchResult {
   book: ClobBook | null;
   yesTokenId: string | null;
   clobInfo: ClobMarketInfo | null;
+  identityValid: boolean;
+  identityFailures: string[];
 }
 
 export async function fetchPolymarketData(
@@ -98,6 +103,14 @@ export async function fetchPolymarketData(
     fetchEvent(eventSlug),
     fetchMarket(marketSlug),
   ]);
+
+  const identityFailures: string[] = [];
+
+  if (event && market) {
+    if (!Array.isArray(event.markets) || !event.markets.some((m) => m.slug === market.slug)) {
+      identityFailures.push("Polymarket market is not part of the selected event.");
+    }
+  }
 
   let yesTokenId: string | null = null;
   if (market && market.clobTokenIds) {
@@ -119,12 +132,23 @@ export async function fetchPolymarketData(
     ? await fetchClobMarketInfo(market.conditionId).catch(() => null)
     : null;
 
+  if (market?.conditionId && clobInfo && clobInfo.conditionId !== market.conditionId) {
+    identityFailures.push("CLOB fee condition ID does not match market condition ID.");
+  }
+
   let book: ClobBook | null = null;
   if (yesTokenId) {
     book = await fetchBook(yesTokenId);
   }
 
-  return { event, market, book, yesTokenId, clobInfo };
+  if (book && yesTokenId && book.asset_id !== yesTokenId) {
+    identityFailures.push("CLOB book asset_id does not match the selected YES token.");
+    book = null;
+  }
+
+  const identityValid = identityFailures.length === 0 && event !== null && market !== null;
+
+  return { event, market, book, yesTokenId, clobInfo, identityValid, identityFailures };
 }
 
 export async function searchActiveSoccerEvents(
@@ -229,14 +253,13 @@ export async function findPolymarketMatchForTeams(
     const drawMarket = markets.find((m) => m.slug === drawSlug);
     const awayMarket = markets.find((m) => m.slug === awaySlug);
 
-    const hasAtLeastOne = homeMarket || drawMarket || awayMarket;
-    if (!hasAtLeastOne) return null;
+    if (!homeMarket || !drawMarket || !awayMarket) return null;
 
     return {
       eventSlug: event.slug,
-      homeMarketSlug: homeMarket?.slug ?? homeSlug,
-      drawMarketSlug: drawMarket?.slug ?? drawSlug,
-      awayMarketSlug: awayMarket?.slug ?? awaySlug,
+      homeMarketSlug: homeMarket.slug,
+      drawMarketSlug: drawMarket.slug,
+      awayMarketSlug: awayMarket.slug,
     };
   } catch {
     return null;

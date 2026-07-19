@@ -149,7 +149,15 @@ export class RealDataProvider implements DataProvider {
     );
 
     const polyData = polyErrored ? null : (polyResult as PolymarketFetchResult);
-    const poly = polyData ?? { event: null, market: null, book: null, yesTokenId: null, clobInfo: null };
+    const poly = polyData ?? {
+      event: null,
+      market: null,
+      book: null,
+      yesTokenId: null,
+      clobInfo: null,
+      identityValid: false,
+      identityFailures: ["Polymarket fetch failed."],
+    };
 
     const normalizedPoly = normalizePolymarket(
       poly.event,
@@ -177,6 +185,8 @@ export class RealDataProvider implements DataProvider {
       marketActive: normalizedPoly.marketActive,
       marketClosed: normalizedPoly.marketClosed,
       acceptingOrders: normalizedPoly.acceptingOrders,
+      polymarketIdentityValid: poly.identityValid,
+      polymarketIdentityFailures: poly.identityFailures,
       outcome: this.outcome,
       expectedHomeTeam: matchMeta.homeTeam,
       expectedAwayTeam: matchMeta.awayTeam,
