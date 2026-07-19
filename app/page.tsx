@@ -16,8 +16,8 @@ import {
   CHECK_ROW_MARK,
   type CheckState,
   type DisplayState,
-  checksEvaluated,
-  rowState,
+  rowStateForSnapshot,
+  shouldShowChecks,
 } from "@/lib/ui/check-state";
 
 const POLL_INTERVAL_MS = 3000;
@@ -753,14 +753,14 @@ function TxlineColumn({
         <p className="mt-2 text-base text-on-surface-variant">{outcomeLabel} to win (regulation time)</p>
       </div>
       <div className="border-t border-outline-variant pt-8">
-        {checksEvaluated(displayState) ? (
+        {shouldShowChecks(snapshot, displayState) ? (
           <div className="space-y-4">
-            <CheckRow state={rowState(displayState, checks?.teams)} label="Teams matched" />
-            <CheckRow state={rowState(displayState, checks?.date)} label="Date matched" />
-            <CheckRow state={rowState(displayState, checks?.rules)} label="Rules: regulation-time 1X2" />
-            <CheckRow state={rowState(displayState, checks?.token)} label="Token matches outcome" />
-            <CheckRow state={rowState(displayState, checks?.marketState)} label="Market state: open" />
-            <CheckRow state={rowState(displayState, checks?.fee)} label="Fee rate available" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.teams)} label="Teams matched" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.date)} label="Date matched" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.rules)} label="Rules: regulation-time 1X2" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.token)} label="Token matches outcome" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.marketState)} label="Market state: open" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.fee)} label="Fee rate available" />
           </div>
         ) : (
           <div className="flex items-center justify-between font-mono text-sm uppercase tracking-[0.04em] text-on-surface-variant">
