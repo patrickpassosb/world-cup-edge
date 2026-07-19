@@ -284,12 +284,12 @@ describe("extractFeeRate (CLOB market info)", () => {
     expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: false } }))).toBeNull();
   });
 
-  it("accepts fd.to=null (unspecified taker-only is allowed)", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: null } }))).toBeCloseTo(0.05);
+  it("rejects fd.to=null (unspecified taker-only is unknown, fail closed)", () => {
+    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: null } }))).toBeNull();
   });
 
-  it("accepts fd.e=null (unspecified exponent is allowed)", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: null, to: true } }))).toBeCloseTo(0.05);
+  it("rejects fd.e=null (unspecified exponent is unknown, fail closed)", () => {
+    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: null, to: true } }))).toBeNull();
   });
 
   it("accepts fee-free markets (r=0)", () => {

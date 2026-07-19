@@ -94,8 +94,8 @@ export function extractFeeRate(
   if (!clobInfo || !clobInfo.fd) return null;
   const { r, e, to } = clobInfo.fd;
   if (r === null || typeof r !== "number" || !Number.isFinite(r) || r < 0) return null;
-  if (e !== null && e !== 1) return null;
-  if (to !== null && to !== true) return null;
+  if (e !== 1) return null;
+  if (to !== true) return null;
   return r;
 }
 
