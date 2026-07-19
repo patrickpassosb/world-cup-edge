@@ -81,7 +81,7 @@ Record with Loom (easiest — browser extension, auto-uploads, gives you a share
 
 ## Submission Checklist
 
-- [ ] Demo video recorded (Loom/YouTube link)
+- [x] Demo video recorded — local file at `/home/patrickpassos/world-cup-edge-demo.mp4` (4:22, 16MB). Upload to Loom/YouTube unlisted and paste the link into each listing form before 23:59 UTC.
 - [ ] Repo URL: https://github.com/patrickpassosb/world-cup-edge
 - [ ] Deploy URL: https://world-cup-edge.fly.dev/
 - [ ] Technical docs pasted into form (from the "Technical Documentation" section above)
