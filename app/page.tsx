@@ -604,6 +604,7 @@ function FocalPointSection({
   const gapAfterFee = snapshot?.gap.gapAfterFee ?? null;
   const isAlert = displayState === "alert";
   const isUnavailable = displayState === "unavailable";
+  const isStale = displayState === "stale";
   const gapColor = isAlert ? "text-alert" : "text-primary";
   const explanation = snapshot ? buildExplanation(snapshot) : "";
   const outcomeLabel = snapshot?.match.outcomeLabel ?? "selected outcome";
@@ -619,6 +620,12 @@ function FocalPointSection({
         <h2 className="mb-4 font-sans text-xs font-bold uppercase tracking-[0.2em] text-on-surface">
           {isAlert ? `Consensus Gap Alert — ${outcomeLabel} to win in regulation` : `Gross Consensus Gap — ${outcomeLabel} to win in regulation`}
         </h2>
+        {isStale && (
+          <p className="mb-4 font-sans text-xs font-bold uppercase tracking-[0.2em] text-stale">
+            <Clock className="mr-1 inline-block h-3 w-3 align-text-bottom" aria-hidden="true" />
+            stale — gap visible, alerts suppressed
+          </p>
+        )}
         <p className="mx-auto max-w-xl border-t border-on-surface pt-4 text-base leading-6 text-on-surface">
           {explanation}
         </p>
@@ -631,6 +638,11 @@ function FocalPointSection({
           <p className="mt-3 text-sm font-medium text-alert">
             <AlertTriangle className="mr-1 inline-block h-4 w-4 align-text-bottom" />
             Gap after fee exceeds {formatPp(snapshot?.gap.threshold ?? 0.05)} threshold. Not an arbitrage guarantee.
+          </p>
+        )}
+        {isStale && snapshot?.alert.suppressedReason && (
+          <p className="mt-3 text-sm text-on-surface-variant">
+            {snapshot.alert.suppressedReason}
           </p>
         )}
         {isUnavailable && (
