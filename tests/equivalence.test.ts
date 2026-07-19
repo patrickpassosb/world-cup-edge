@@ -310,6 +310,24 @@ describe("checkEquivalence overall", () => {
       polymarketMarketQuestion: "Will Côte d'Ivoire win on 2026-07-16?",
     });
     expect(result.checks.teams).toBe(true);
+    expect(result.checks.token).toBe(true);
+  });
+
+  it("accepts team-labeled token with accents for away outcome", () => {
+    const result = checkEquivalence({
+      ...VALID_INPUT,
+      txlineHomeTeam: "Ghana",
+      txlineAwayTeam: "Côte d'Ivoire",
+      polymarketHomeTeam: "Ghana",
+      polymarketAwayTeam: "Cote d'Ivoire",
+      expectedHomeTeam: "Ghana",
+      expectedAwayTeam: "Côte d'Ivoire",
+      outcome: "away" as const,
+      selectedTokenLabel: "Côte d'Ivoire YES",
+      polymarketResolutionWording: "Côte d'Ivoire to win in the first 90 minutes plus stoppage time (excludes extra time)",
+      polymarketMarketQuestion: "Will Côte d'Ivoire win on 2026-07-16?",
+    });
+    expect(result.checks.token).toBe(true);
   });
 
   it("accepts null txlineMarketPeriod for regulation-time 1X2 (live API shape)", () => {

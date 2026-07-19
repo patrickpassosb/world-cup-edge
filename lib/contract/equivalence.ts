@@ -70,7 +70,7 @@ function tokenMatchesOutcome(
   marketQuestion: string | null,
 ): boolean {
   if (label === null) return false;
-  const l = label.toLowerCase().trim();
+  const l = normalizeTeam(label);
   if (l === "no" || l.includes(" no") || l.endsWith("-no")) return false;
   if (outcome === "draw") {
     if (l === "yes" || l === "true") {
@@ -91,7 +91,7 @@ function questionConfirmsWin(
   expectedTeam: string | null,
 ): boolean {
   if (question === null || expectedTeam === null) return false;
-  const q = question.toLowerCase();
+  const q = normalizeTeam(question);
   if (q.includes("draw") || q.includes("qualify") || q.includes("qualification") || q.includes("advance")) {
     return false;
   }
@@ -103,7 +103,7 @@ function questionConfirmsWin(
 
 function questionConfirmsDraw(question: string | null): boolean {
   if (question === null) return false;
-  const q = question.toLowerCase();
+  const q = normalizeTeam(question);
   if (!q.includes("draw")) return false;
   if (q.includes("win") && !q.includes("end in a draw") && !q.includes("finish in a draw")) {
     return false;
