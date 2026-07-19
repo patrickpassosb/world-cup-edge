@@ -263,6 +263,7 @@ function DashboardContent() {
   const [selectedMatch, setSelectedMatch] = useState<MatchEntry | null>(null);
   const [outcome, setOutcome] = useState<Outcome>("home");
   const lastDedupeKeyRef = useRef<string | null>(null);
+  const selectionTokenRef = useRef<string>("");
 
   const searchParams = useSearchParams();
   const isReplay = searchParams?.get("demo") === "replay";
@@ -311,6 +312,8 @@ function DashboardContent() {
     lastDedupeKeyRef.current = null;
 
     const marketSlug = getMarketSlug(selectedMatch, outcome);
+    const currentSelectionToken = `${selectedMatch.fixtureId}::${outcome}`;
+    selectionTokenRef.current = currentSelectionToken;
 
     let pollingAborted = false;
     const doPoll = async () => {
@@ -336,6 +339,7 @@ function DashboardContent() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: Snapshot = await res.json();
+        if (selectionTokenRef.current !== currentSelectionToken) return;
         setSnapshot(data);
 
         if (data.alert.active && !txlineOnly) {
@@ -357,6 +361,7 @@ function DashboardContent() {
       } catch (err) {
         if (controller.signal.aborted) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
+        if (selectionTokenRef.current !== currentSelectionToken) return;
         setSnapshot((prev) => {
           if (prev && prev.status !== "error") {
             return {
