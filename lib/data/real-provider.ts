@@ -240,14 +240,27 @@ export class RealDataProvider implements DataProvider {
       };
     }
 
-    this.previousPhase = alert.phase;
-    this.previousConsecutiveSamples = alert.consecutiveSamples;
+    if (alert.suppressedReason !== null || !alert.active) {
+      this.previousPhase = alert.phase === "COOLDOWN" ? alert.phase : "IDLE";
+      this.previousConsecutiveSamples = 0;
+    } else {
+      this.previousPhase = alert.phase;
+      this.previousConsecutiveSamples = alert.consecutiveSamples;
+    }
     if (alert.active) {
       this.lastAlertTime = now;
       this.lastDedupeKey = alert.dedupeKey;
     }
 
-    const status = this.determineStatus(normalizedTxline.fresh, normalizedPoly.fresh, equivalence.passed, normalizedPoly.marketClosed);
+    const status = this.determineStatus(
+      normalizedTxline.fresh,
+      normalizedPoly.fresh,
+      equivalence.passed,
+      normalizedPoly.marketClosed,
+      normalizedPoly.feeRate,
+      normalizedPoly.bookEmpty,
+      polyErrored,
+    );
 
     const checks = buildVerificationChecks(equivalence, normalizedPoly.feeRate);
 
@@ -309,9 +322,15 @@ export class RealDataProvider implements DataProvider {
     polyFresh: boolean,
     equivalencePassed: boolean,
     marketClosed: boolean,
+    feeRate: number | null,
+    bookEmpty: boolean,
+    polyErrored: boolean,
   ): "live" | "stale" | "unavailable" {
     if (marketClosed) return "unavailable";
     if (!equivalencePassed) return "unavailable";
+    if (polyErrored) return "unavailable";
+    if (feeRate === null) return "unavailable";
+    if (bookEmpty) return "unavailable";
     if (!txlineFresh || !polyFresh) return "stale";
     return "live";
   }
@@ -346,13 +365,22 @@ export class RealDataProvider implements DataProvider {
     txlineErr: string | null,
     now: number,
   ): Snapshot {
-    const poly = polyData ?? { event: null, market: null, book: null, yesTokenId: null };
+    const poly = polyData ?? {
+      event: null,
+      market: null,
+      book: null,
+      yesTokenId: null,
+      clobInfo: null,
+      identityValid: false,
+      identityFailures: [],
+    };
     const normalizedPoly = normalizePolymarket(
       poly.event,
       poly.market,
       poly.book,
       poly.yesTokenId,
       now,
+      poly.clobInfo,
     );
     const matchMeta = this.buildMatchMetadataForError();
 
@@ -415,7 +443,7 @@ export class RealDataProvider implements DataProvider {
         date: false,
         rules: false,
         token: false,
-        marketState: false,
+        marketState: normalizedPoly.marketActive && !normalizedPoly.marketClosed && normalizedPoly.acceptingOrders,
         fee: normalizedPoly.feeRate !== null,
       },
       equivalence: null,

@@ -384,4 +384,112 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
       "Polymarket market is not part of the selected event.",
     );
   });
+
+  it("reports unavailable status when fee is missing", async () => {
+    fetchOddsForMatchMock.mockResolvedValue({
+      fixture: makeFixture(),
+      odds: [makeOdds()],
+    });
+    fetchPolymarketDataMock.mockResolvedValue({
+      event: makeEvent(),
+      market: makeMarket(),
+      book: makeBook(),
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo({ fd: null }),
+      identityValid: true,
+      identityFailures: [],
+    });
+
+    const provider = await makeProvider();
+    const snapshot = await provider.getSnapshot();
+
+    expect(snapshot.status).toBe("unavailable");
+    expect(snapshot.alert.active).toBe(false);
+  });
+
+  it("reports unavailable status when book is empty", async () => {
+    fetchOddsForMatchMock.mockResolvedValue({
+      fixture: makeFixture(),
+      odds: [makeOdds()],
+    });
+    const emptyBook: ClobBook = {
+      market: "0xmarket",
+      asset_id: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      bids: [],
+      asks: [],
+      timestamp: String(Date.now() - 4_000),
+      hash: "0xhash",
+    };
+    fetchPolymarketDataMock.mockResolvedValue({
+      event: makeEvent(),
+      market: makeMarket(),
+      book: emptyBook,
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
+    });
+
+    const provider = await makeProvider();
+    const snapshot = await provider.getSnapshot();
+
+    expect(snapshot.status).toBe("unavailable");
+    expect(snapshot.alert.active).toBe(false);
+  });
+
+  it("resets consecutive samples after a failed poll", async () => {
+    fetchOddsForMatchMock.mockResolvedValueOnce({
+      fixture: makeFixture(),
+      odds: [makeOdds({ pct: ["80.000", "10.000", "10.000"] })],
+    });
+    fetchPolymarketDataMock.mockResolvedValueOnce({
+      event: makeEvent(),
+      market: makeMarket({ outcomePrices: '["0.40", "0.60"]' }),
+      book: { ...makeBook(), asks: [{ price: "0.30", size: "80" }] },
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
+    });
+
+    fetchOddsForMatchMock.mockRejectedValueOnce(new Error("network error"));
+    fetchPolymarketDataMock.mockResolvedValueOnce({
+      event: makeEvent(),
+      market: makeMarket(),
+      book: makeBook(),
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
+    });
+
+    fetchOddsForMatchMock.mockResolvedValueOnce({
+      fixture: makeFixture(),
+      odds: [makeOdds({ pct: ["80.000", "10.000", "10.000"] })],
+    });
+    fetchPolymarketDataMock.mockResolvedValueOnce({
+      event: makeEvent(),
+      market: makeMarket({ outcomePrices: '["0.40", "0.60"]' }),
+      book: { ...makeBook(), asks: [{ price: "0.30", size: "80" }] },
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
+    });
+
+    const provider = await makeProvider();
+
+    const first = await provider.getSnapshot();
+    expect(first.alert.phase).toBe("SAMPLING");
+    expect(first.alert.consecutiveSamples).toBe(1);
+
+    const second = await provider.getSnapshot();
+    expect(second.status).toBe("unavailable");
+    expect(second.alert.active).toBe(false);
+
+    const third = await provider.getSnapshot();
+    expect(third.alert.phase).toBe("SAMPLING");
+    expect(third.alert.consecutiveSamples).toBe(1);
+    expect(third.alert.active).toBe(false);
+  });
 });

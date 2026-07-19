@@ -423,6 +423,15 @@ function buildUnavailableSnapshot(outcome: Outcome = "home"): Snapshot {
     yesTokenId: null,
     marketQuestion: null,
   };
+  snapshot.equivalence = null;
+  snapshot.checks = {
+    teams: false,
+    date: false,
+    rules: false,
+    token: false,
+    marketState: false,
+    fee: false,
+  };
   snapshot.alert = {
     active: false,
     reason: "Market is closed. Alerts suppressed.",
@@ -443,6 +452,15 @@ function buildErrorSnapshot(outcome: Outcome = "home"): Snapshot {
 
   snapshot.status = "error";
   snapshot.errorMessage = "Failed to fetch snapshot from data source.";
+  snapshot.equivalence = null;
+  snapshot.checks = {
+    teams: false,
+    date: false,
+    rules: false,
+    token: false,
+    marketState: false,
+    fee: false,
+  };
   snapshot.alert = {
     active: false,
     reason: "Fetch error. Alerts suppressed.",
