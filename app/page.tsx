@@ -11,17 +11,16 @@ import {
 import { useSearchParams } from "next/navigation";
 import { DISCLAIMER_LINES, MATCH } from "@/lib/config";
 import type { MatchEntry, Outcome, SessionAlert, Snapshot } from "@/lib/types";
+import {
+  CHECK_ROW_COLOR,
+  CHECK_ROW_MARK,
+  type CheckState,
+  type DisplayState,
+  rowStateForSnapshot,
+  shouldShowChecks,
+} from "@/lib/ui/check-state";
 
 const POLL_INTERVAL_MS = 3000;
-
-type DisplayState =
-  | "loading"
-  | "live"
-  | "stale"
-  | "no-alert"
-  | "alert"
-  | "unavailable"
-  | "error";
 
 function deriveDisplayState(snapshot: Snapshot | null): DisplayState {
   if (snapshot === null) return "loading";
@@ -605,7 +604,13 @@ function FocalPointSection({
   const isAlert = displayState === "alert";
   const isUnavailable = displayState === "unavailable";
   const isStale = displayState === "stale";
-  const gapColor = isAlert ? "text-alert" : "text-primary";
+  const isUnreliable =
+    displayState === "stale" || displayState === "unavailable" || displayState === "error";
+  const gapColor = isAlert
+    ? "text-alert"
+    : isUnreliable
+      ? "text-on-surface-variant"
+      : "text-primary";
   const explanation = snapshot ? buildExplanation(snapshot) : "";
   const outcomeLabel = snapshot?.match.outcomeLabel ?? "selected outcome";
 
@@ -680,11 +685,18 @@ function TwoColumnSection({
   displayState: DisplayState;
   txlineOnly: boolean;
 }) {
+  const txlineUnreliable =
+    displayState === "stale" || displayState === "unavailable" || displayState === "error";
   return (
     <section className="grid grid-cols-1 border-b border-outline-variant md:min-h-[628px] md:grid-cols-2">
       <TxlineColumn snapshot={snapshot} displayState={displayState} />
       <div className="border-t border-outline-variant md:border-t-0">
-        <PolymarketColumn snapshot={snapshot} displayState={displayState} txlineOnly={txlineOnly} />
+        <PolymarketColumn
+          snapshot={snapshot}
+          displayState={displayState}
+          txlineOnly={txlineOnly}
+          dimmed={txlineUnreliable}
+        />
       </div>
     </section>
   );
@@ -740,13 +752,24 @@ function TxlineColumn({
         </span>
         <p className="mt-2 text-base text-on-surface-variant">{outcomeLabel} to win (regulation time)</p>
       </div>
-      <div className="space-y-4 border-t border-outline-variant pt-8">
-        <CheckRow passed={checks?.teams ?? false} label="Teams matched" />
-        <CheckRow passed={checks?.date ?? false} label="Date matched" />
-        <CheckRow passed={checks?.rules ?? false} label="Rules: regulation-time 1X2" />
-        <CheckRow passed={checks?.token ?? false} label="Token matches outcome" />
-        <CheckRow passed={checks?.marketState ?? false} label="Market state: open" />
-        <CheckRow passed={checks?.fee ?? false} label="Fee rate available" />
+      <div className="border-t border-outline-variant pt-8">
+        {shouldShowChecks(snapshot, displayState) ? (
+          <div className="space-y-4">
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.teams)} label="Teams matched" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.date)} label="Date matched" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.rules)} label="Rules: regulation-time 1X2" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.token)} label="Token matches outcome" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.marketState)} label="Market state: open" />
+            <CheckRow state={rowStateForSnapshot(snapshot, displayState, checks?.fee)} label="Fee rate available" />
+          </div>
+        ) : (
+          <div className="flex items-center justify-between font-mono text-sm uppercase tracking-[0.04em] text-on-surface-variant">
+            <span>Equivalence not evaluated</span>
+            <span aria-label="Checks not evaluated" className="font-bold text-on-surface-variant">
+              —
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -756,10 +779,12 @@ function PolymarketColumn({
   snapshot,
   displayState,
   txlineOnly,
+  dimmed,
 }: {
   snapshot: Snapshot | null;
   displayState: DisplayState;
   txlineOnly: boolean;
+  dimmed: boolean;
 }) {
   if (txlineOnly) {
     return (
@@ -807,11 +832,21 @@ function PolymarketColumn({
       </div>
       <div className="mb-12">
         <div className="flex items-baseline gap-2">
-          <span className="font-mono text-[56px] font-medium leading-none tracking-tight tabular-nums text-on-surface md:text-[64px]">
+          <span
+            className={`font-mono text-[56px] font-medium leading-none tracking-tight tabular-nums md:text-[64px] ${
+              dimmed ? "text-on-surface-variant" : "text-on-surface"
+            }`}
+          >
             {formatPct(bestAsk)}
           </span>
           {!isUnavailable && bestAsk !== null && (
-            <span className="border border-on-surface px-1 font-sans text-xs font-bold uppercase tracking-[0.05em] text-on-surface">
+            <span
+              className={`border px-1 font-sans text-xs font-bold uppercase tracking-[0.05em] ${
+                dimmed
+                  ? "border-on-surface-variant text-on-surface-variant"
+                  : "border-on-surface text-on-surface"
+              }`}
+            >
               best ask
             </span>
           )}
@@ -865,12 +900,19 @@ function FreshnessIndicator({
   );
 }
 
-function CheckRow({ passed, label }: { passed: boolean; label: string }) {
+function CheckRow({ state, label }: { state: CheckState; label: string }) {
   return (
     <div className="flex items-center justify-between font-mono text-sm uppercase tracking-[0.04em] text-on-surface-variant">
       <span>{label}</span>
-      <span className={passed ? "font-bold text-on-surface" : "font-bold text-error"}>
-        {passed ? "✓" : "×"}
+      <span
+        aria-label={
+          state === "pass" ? "Check passed" :
+          state === "fail" ? "Check failed" :
+          "Check not evaluated"
+        }
+        className={`font-bold ${CHECK_ROW_COLOR[state]}`}
+      >
+        {CHECK_ROW_MARK[state]}
       </span>
     </div>
   );
