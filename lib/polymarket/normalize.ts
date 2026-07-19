@@ -16,7 +16,7 @@ export function extractYesToken(
   try {
     const tokens: string[] = JSON.parse(market.clobTokenIds);
     const labels: string[] = JSON.parse(market.outcomes);
-    if (tokens.length !== labels.length) {
+    if (tokens.length !== labels.length || tokens.length === 0) {
       return { tokenId: null, label: null };
     }
     const yesIdx = labels.findIndex(
@@ -24,6 +24,12 @@ export function extractYesToken(
     );
     if (yesIdx >= 0 && tokens[yesIdx]) {
       return { tokenId: tokens[yesIdx], label: labels[yesIdx] };
+    }
+    const teamIdx = labels.findIndex(
+      (l) => l.toLowerCase() !== "no" && l.toLowerCase() !== "draw" && l.toLowerCase() !== "",
+    );
+    if (teamIdx >= 0 && tokens[teamIdx]) {
+      return { tokenId: tokens[teamIdx], label: labels[teamIdx] };
     }
     return { tokenId: null, label: null };
   } catch {

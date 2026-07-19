@@ -89,15 +89,36 @@ describe("extractYesToken", () => {
     expect(result.label).toBe("Yes");
   });
 
-  it("returns null for team-name label without Yes/True (team-name matching handled by equivalence)", () => {
+  it("accepts team-name label as affirmative when no Yes/True present", () => {
     const result = extractYesToken(
       makeMarket({
         outcomes: '["England", "No"]',
         clobTokenIds: '["token-eng-123", "token-no-456"]',
       }),
     );
+    expect(result.tokenId).toBe("token-eng-123");
+    expect(result.label).toBe("England");
+  });
+
+  it("prefers Yes/True over team-name labels", () => {
+    const result = extractYesToken(
+      makeMarket({
+        outcomes: '["Yes", "England", "No"]',
+        clobTokenIds: '["token-yes", "token-eng", "token-no"]',
+      }),
+    );
+    expect(result.tokenId).toBe("token-yes");
+    expect(result.label).toBe("Yes");
+  });
+
+  it("returns null when only No label present", () => {
+    const result = extractYesToken(
+      makeMarket({
+        outcomes: '["No"]',
+        clobTokenIds: '["token-no"]',
+      }),
+    );
     expect(result.tokenId).toBeNull();
-    expect(result.label).toBeNull();
   });
 
   it("returns null when outcomes and tokens have mismatched lengths", () => {
@@ -116,7 +137,7 @@ describe("extractYesToken", () => {
     expect(result.label).toBeNull();
   });
 
-  it("returns null when no Yes or England label found", () => {
+  it("returns null when no affirmative label found (only Draw and No)", () => {
     const result = extractYesToken(
       makeMarket({
         outcomes: '["Draw", "No"]',

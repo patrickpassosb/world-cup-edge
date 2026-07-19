@@ -117,11 +117,20 @@ export async function fetchPolymarketData(
     try {
       const tokens: string[] = JSON.parse(market.clobTokenIds);
       const labels: string[] = market.outcomes ? JSON.parse(market.outcomes) : [];
-      const yesIdx = labels.findIndex(
-        (l) => l.toLowerCase() === "yes" || l.toLowerCase() === "true",
-      );
-      if (yesIdx >= 0 && tokens[yesIdx]) {
-        yesTokenId = tokens[yesIdx];
+      if (tokens.length === labels.length && tokens.length > 0) {
+        const yesIdx = labels.findIndex(
+          (l) => l.toLowerCase() === "yes" || l.toLowerCase() === "true",
+        );
+        if (yesIdx >= 0 && tokens[yesIdx]) {
+          yesTokenId = tokens[yesIdx];
+        } else {
+          const teamIdx = labels.findIndex(
+            (l) => l.toLowerCase() !== "no" && l.toLowerCase() !== "draw" && l.toLowerCase() !== "",
+          );
+          if (teamIdx >= 0 && tokens[teamIdx]) {
+            yesTokenId = tokens[teamIdx];
+          }
+        }
       }
     } catch {
       yesTokenId = null;
