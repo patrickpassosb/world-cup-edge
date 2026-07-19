@@ -12,7 +12,7 @@ Version 1 - global market, TAM/SAM/SOM, revenue model, operational ROI, CAC, LTV
 
 ## Executive Summary
 
-**World Cup Edge is a global monitoring platform for prediction-market traders and researchers.** It compares TxLINE's StablePrice consensus probability with Polymarket's top-of-book quote for the same sports outcome. It then calculates the gross gap, subtracts the venue's dynamic fee, and emits a deterministic alert only when the data, contracts, timestamps, liquidity, and market state pass every validation check.
+**World Cup Edge is a global monitoring platform for active prediction-market traders.** It compares TxLINE's StablePrice consensus probability with Polymarket's top-of-book quote for the same sports outcome. It then calculates the gross gap, subtracts the venue's dynamic fee, and emits a deterministic alert only when the data, contracts, timestamps, liquidity, and market state pass every validation check.
 
 **Positioning:** World Cup Edge is not a sportsbook, trading bot, settlement oracle, or AI recommendation engine. It is an operational intelligence and context-verification layer for people who already research prediction markets.
 
@@ -22,12 +22,12 @@ The product begins with football and Polymarket as its entry point, but the comm
 
 | Element | World Cup Edge |
 | :---- | :---- |
-| Initial customer | Active traders, quantitative researchers, and developers building prediction-market tools. |
+| Initial customer | Active sports prediction-market traders who monitor several markets every week. |
 | Problem | Comparing sports consensus, equivalent contracts, liquidity, fees, and data freshness requires manual work and produces false positives. |
 | Solution | A read-only monitor that automates the comparison, validates contract equivalence, and fails closed when the inputs are unreliable. |
 | Value | Less time collecting and validating data; more clarity about which divergences deserve investigation. |
 | Future revenue | Global freemium model: Free, Pro at US$39/month, and Team/API starting at US$199/month. |
-| Go-to-market | Polymarket/Kalshi communities, open-source builders, evidence-based content during live events, and data-tool partnerships. |
+| Go-to-market | Direct outreach to active traders, Polymarket/Kalshi communities, transparent live-event research, and trader-focused partnerships. |
 | Differentiator | TxLINE + top-of-book + dynamic fees + contract equivalence + freshness + fail-closed logic in one deterministic workflow. |
 
 # 1. Impact of the Problem
@@ -125,26 +125,26 @@ The advantage is not a secret formula. It accumulates in the quality of the comp
 | Specialist analysts and creators | Can explain market movements without relying on opaque picks. |
 | Platforms and institutional desks | Future segment, conditional on licensing, SLA, compliance, and enterprise integrations. |
 
-**Recommended initial ICP:** an English-speaking trader or builder who follows sports markets on Polymarket or Kalshi several times per week, currently compares odds and contracts manually, and is willing to test a read-only research tool.
+**Recommended initial ICP:** an English-speaking active trader who monitors sports prediction markets several times per week, currently compares external probabilities, market rules, order books, and fees manually, and will pay for a faster read-only research workflow that reduces false comparisons.
 
 **Initial wedge:** live sports and lower-volume markets where fast changes and limited professional coverage make manual monitoring more expensive. Highly liquid global markets may be efficient and produce few alerts; in that case, "no qualified divergence" remains a valid product result.
 
 ## 5.1 Primary Persona: Maya Reed
 
-> **Composite persona:** Maya is a fictional representation of the initial ICP, built from the documented behavior of prediction-market traders, quantitative researchers, and independent tooling developers. She is not a customer testimonial.
+> **Composite persona:** Maya is a fictional representation of the initial ICP, built from documented active-trader workflows and prediction-market research. She is not a customer testimonial.
 
 | Attribute | Description |
 | :---- | :---- |
-| Role | Independent prediction-market researcher and part-time automation builder. |
-| Behavior | Monitors sports markets several times per week and uses market pages, external odds feeds, order books, API responses, and spreadsheets. |
-| Core job | Decide quickly whether an apparent difference is current, fee-adjusted, and based on equivalent contracts. |
-| Main pain | By the time she checks teams, regulation rules, freshness, liquidity, and fees, the quote may have moved or the apparent gap may prove invalid. |
-| Buying trigger | A live tournament creates more markets than she can validate manually without missing changes or accepting false positives. |
-| Desired outcome | One research view that shows what deserves investigation, what must be ignored, and why. |
+| Role | Active sports prediction-market trader managing her own research and decisions. |
+| Behavior | Monitors and trades sports outcome contracts several times per week while using market pages, external odds feeds, order books, and spreadsheets. |
+| Core job | Find price differences that may support her return goals, then determine whether each gap is current, fee-adjusted, and based on equivalent contracts before committing attention or capital. |
+| Main pain | Slow validation can cost her the market window; incorrect validation can expose her capital to a false comparison. |
+| Buying trigger | A live tournament creates more fast-moving markets than she can validate manually without missing changes or accepting false positives. |
+| Desired outcome | One research view that helps her pursue meaningful differences while avoiding wasted time and invalid comparisons. |
 | Main objection | She will not pay for another opaque picks tool or a dashboard that merely republishes data she can already access. |
-| Success measure | Less validation time, more markets monitored, fewer false comparisons, and repeated weekly use. |
+| Success measure | Faster validation, more markets monitored, fewer false comparisons, and repeated weekly use. |
 
-**Persona statement:** "I do not need another prediction. I need to know whether the two prices are actually comparable."
+**Persona statement:** "My goal is to generate returns, but I need to know whether a gap is valid before I risk time or capital on it."
 
 The pitch-ready story and slide treatment are documented in [`World_Cup_Edge_ICP_Persona_and_Pitch_Story.md`](./World_Cup_Edge_ICP_Persona_and_Pitch_Story.md).
 
@@ -202,7 +202,7 @@ The estimates below use public data compiled during the hackathon and explicit c
 | :---- | :---- | :---- | :---- |
 | TAM - global participants | 840,000 to 2 million participants/wallets × US$20-50/month | Approximately US$202 million to US$1.2 billion/year | Broad theoretical ceiling, not a revenue forecast. |
 | SAM - frequent sports traders | 5%-10% of the broad base × US$29-49/month | Approximately US$15 million to US$118 million/year | Segment size and willingness to pay require validation. |
-| Beachhead - reachable traders and builders | Polymarket/Kalshi, open-source, TxLINE, and quantitative-research communities | Measured through qualified users rather than venue volume | The initial market must be proved through interviews, activation, and retention. |
+| Beachhead - reachable active traders | Polymarket/Kalshi sports communities, public trader accounts, and quantitative-trading groups | Measured through qualified active traders rather than venue volume | The initial market must be proved through interviews, activation, and retention. |
 
 ## 8.1 Realistic Execution SOM
 
@@ -261,7 +261,7 @@ The following metrics are management targets for an early-stage global SaaS busi
 # 11. Global Go-to-Market
 
 * **Entry offer:** "Compare TxLINE consensus with the market quote in seconds, with rules and freshness checked first."
-* **Channel 1 - founder-led outreach:** contact traders and builders who have published Polymarket/Kalshi bots, APIs, and research.
+* **Channel 1 - founder-led outreach:** contact active traders who publicly share sports-market research, workflows, and post-mortems.
 * **Channel 2 - communities:** Polymarket, Kalshi, Hacker News, GitHub, TxLINE Telegram, data communities, and quantitative-research groups.
 * **Channel 3 - evidence-based content:** publish live-match monitoring and transparent post-mortems, including sessions where the result is "no alert."
 * **Channel 4 - open source:** keep the deterministic engine, tests, and documentation public to build technical trust.
@@ -334,7 +334,7 @@ Before treating this document as a financial operating plan, the project must an
 
 | Horizon | Target |
 | :---- | :---- |
-| Hackathon | Demonstrate the functional workflow and obtain qualitative feedback from at least 3 traders or builders. |
+| Hackathon | Demonstrate the functional workflow and obtain qualitative feedback from at least 3 active traders. |
 | 30 days | 20 global testers; 5 using the product in more than one session. |
 | 60 days | First paid Pro pilot and measured research time saved. |
 | 90 days | 10 paying customers or an evidence-based pivot decision. |
