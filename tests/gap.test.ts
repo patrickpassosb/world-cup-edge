@@ -57,6 +57,14 @@ describe("computeFeePerShare", () => {
   it("returns null when best ask is null", () => {
     expect(computeFeePerShare(0.05, null)).toBeNull();
   });
+
+  it("uses exponent 2 when provided (p^2 * (1-p)^2)", () => {
+    expect(computeFeePerShare(0.05, 0.5, 2)).toBeCloseTo(0.05 * 0.25 * 0.25, 6);
+  });
+
+  it("defaults to exponent 1 when not provided", () => {
+    expect(computeFeePerShare(0.05, 0.5)).toBeCloseTo(0.05 * 0.5 * 0.5, 6);
+  });
 });
 
 describe("computeGapAfterFee", () => {

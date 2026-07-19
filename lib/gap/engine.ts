@@ -18,11 +18,14 @@ export function computeGrossGap(
 export function computeFeePerShare(
   feeRate: number | null,
   bestAsk: number | null,
+  feeExponent: number | null = 1,
 ): number | null {
   if (!isFiniteNumber(feeRate) || !isFiniteNumber(bestAsk)) {
     return null;
   }
-  return feeRate * bestAsk * (1 - bestAsk);
+  const e = isFiniteNumber(feeExponent) ? (feeExponent as number) : 1;
+  const p = bestAsk;
+  return feeRate * Math.pow(p, e) * Math.pow(1 - p, e);
 }
 
 export function computeGapAfterFee(

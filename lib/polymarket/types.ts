@@ -51,6 +51,7 @@ export interface NormalizedPolymarket {
   bestBid: number | null;
   askSize: number | null;
   feeRate: number | null;
+  feeExponent: number | null;
   bookSeq: number | null;
   timestamp: number | null;
   receivedAt: number;

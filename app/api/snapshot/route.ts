@@ -106,6 +106,7 @@ export async function GET(request: Request) {
         bestBid: null,
         askSize: null,
         feeRate: null,
+        feeExponent: null,
         bookSeq: null,
         timestamp: null,
         receivedAt: null,

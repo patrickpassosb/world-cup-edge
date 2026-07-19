@@ -96,13 +96,13 @@ export function isBookEmpty(book: ClobBook | null): boolean {
 export function extractFeeRate(
   market: GammaMarket | null,
   clobInfo: ClobMarketInfo | null,
-): number | null {
-  if (!clobInfo || !clobInfo.fd) return null;
+): { rate: number | null; exponent: number | null } {
+  if (!clobInfo || !clobInfo.fd) return { rate: null, exponent: null };
   const { r, e, to } = clobInfo.fd;
-  if (r === null || typeof r !== "number" || !Number.isFinite(r) || r < 0) return null;
-  if (e !== 1) return null;
-  if (to !== true) return null;
-  return r;
+  if (r === null || typeof r !== "number" || !Number.isFinite(r) || r < 0) return { rate: null, exponent: null };
+  if (e !== 1 && e !== 2) return { rate: null, exponent: null };
+  if (to !== true) return { rate: null, exponent: null };
+  return { rate: r, exponent: e };
 }
 
 export function extractMarketQuestion(market: GammaMarket | null): string | null {
@@ -156,7 +156,7 @@ export function normalizePolymarket(
   const bestBid = extractBestBid(book);
   const bookTimestamp = extractBookTimestamp(book);
   const bookEmpty = isBookEmpty(book);
-  const feeRate = extractFeeRate(market, clobInfo);
+  const { rate: feeRate, exponent: feeExponent } = extractFeeRate(market, clobInfo);
   const teams = extractTeamsFromEvent(event);
   const matchDate = extractMatchDate(market);
   const resolutionWording = extractResolutionWording(market);
@@ -171,6 +171,7 @@ export function normalizePolymarket(
     bestBid,
     askSize: bestAsk.size,
     feeRate,
+    feeExponent,
     bookSeq: bookTimestamp,
     timestamp: bookTimestamp,
     receivedAt,

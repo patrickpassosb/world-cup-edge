@@ -143,6 +143,7 @@ function makeBaseSnapshot(outcome: Outcome = "home"): Snapshot {
       bestBid: null,
       askSize: null,
       feeRate: null,
+      feeExponent: null,
       bookSeq: null,
       timestamp: null,
       receivedAt: null,
@@ -190,7 +191,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
   const polymarketTimestamp = now - 4_000;
 
   const grossGap = computeGrossGap(txlineProbability, bestAsk);
-  const feePerShare = computeFeePerShare(feeRate, bestAsk);
+  const feePerShare = computeFeePerShare(feeRate, bestAsk, 1);
   const gapAfterFee =
     gapAfterFeeOverride !== undefined
       ? gapAfterFeeOverride
@@ -211,6 +212,7 @@ function buildLiveSnapshot(outcome: Outcome = "home", gapAfterFeeOverride?: numb
     bestBid,
     askSize: 500,
     feeRate,
+    feeExponent: 1,
     bookSeq: 1001,
     timestamp: polymarketTimestamp,
     receivedAt: now,
@@ -272,7 +274,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
   const polymarketTimestamp = now - 2_000;
 
   const grossGap = computeGrossGap(txlineProbability, bestAsk);
-  const feePerShare = computeFeePerShare(feeRate, bestAsk);
+  const feePerShare = computeFeePerShare(feeRate, bestAsk, 1);
   const gapAfterFee = computeGapAfterFee(grossGap, feePerShare);
 
   snapshot.txline = {
@@ -290,6 +292,7 @@ function buildAlertSnapshot(outcome: Outcome = "home"): Snapshot {
     bestBid,
     askSize: 300,
     feeRate,
+    feeExponent: 1,
     bookSeq: 2042,
     timestamp: polymarketTimestamp,
     receivedAt: now,
@@ -362,6 +365,7 @@ function buildStaleSnapshot(outcome: Outcome = "home"): Snapshot {
     bestBid: OUTCOME_BEST_BID[outcome],
     askSize: 500,
     feeRate: 0.05,
+    feeExponent: 1,
     bookSeq: 1001,
     timestamp: polymarketTimestamp,
     receivedAt: now,
@@ -412,6 +416,7 @@ function buildUnavailableSnapshot(outcome: Outcome = "home"): Snapshot {
     bestBid: null,
     askSize: null,
     feeRate: null,
+    feeExponent: null,
     bookSeq: null,
     timestamp: null,
     receivedAt: now,

@@ -195,7 +195,7 @@ export class RealDataProvider implements DataProvider {
 
     const rawGrossGap = computeGrossGap(normalizedTxline.probability, normalizedPoly.bestAsk);
     const grossGap = equivalence.passed ? rawGrossGap : null;
-    const feePerShare = computeFeePerShare(normalizedPoly.feeRate, normalizedPoly.bestAsk);
+    const feePerShare = computeFeePerShare(normalizedPoly.feeRate, normalizedPoly.bestAsk, normalizedPoly.feeExponent);
     const gapAfterFee = equivalence.passed ? computeGapAfterFee(grossGap, feePerShare) : null;
 
     const sourceSkewMs =
@@ -291,6 +291,7 @@ export class RealDataProvider implements DataProvider {
         bestBid: normalizedPoly.bestBid,
         askSize: normalizedPoly.askSize,
         feeRate: normalizedPoly.feeRate,
+        feeExponent: normalizedPoly.feeExponent,
         bookSeq: normalizedPoly.bookSeq,
         timestamp: normalizedPoly.timestamp,
         receivedAt: normalizedPoly.receivedAt,
@@ -413,6 +414,7 @@ export class RealDataProvider implements DataProvider {
         bestBid: normalizedPoly.bestBid,
         askSize: normalizedPoly.askSize,
         feeRate: normalizedPoly.feeRate,
+        feeExponent: normalizedPoly.feeExponent,
         bookSeq: normalizedPoly.bookSeq,
         timestamp: normalizedPoly.timestamp,
         receivedAt: normalizedPoly.receivedAt,
@@ -486,6 +488,7 @@ export class RealDataProvider implements DataProvider {
         bestBid: null,
         askSize: null,
         feeRate: null,
+        feeExponent: null,
         bookSeq: null,
         timestamp: null,
         receivedAt: null,

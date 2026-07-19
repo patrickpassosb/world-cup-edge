@@ -273,47 +273,67 @@ describe("extractFeeRate (CLOB market info)", () => {
     };
   }
 
-  it("extracts fee rate from CLOB fd.r when fd.e=1 and fd.to=true", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo())).toBeCloseTo(0.05);
+  it("extracts fee rate and exponent 1 from CLOB fd when fd.e=1 and fd.to=true", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo());
+    expect(result.rate).toBeCloseTo(0.05);
+    expect(result.exponent).toBe(1);
   });
 
-  it("returns null when clobInfo is null", () => {
-    expect(extractFeeRate(makeMarket(), null)).toBeNull();
+  it("extracts fee rate and exponent 2 when fd.e=2 and fd.to=true", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 2, to: true } }));
+    expect(result.rate).toBeCloseTo(0.05);
+    expect(result.exponent).toBe(2);
   });
 
-  it("returns null when fd is null", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: null }))).toBeNull();
+  it("returns nulls when clobInfo is null", () => {
+    const result = extractFeeRate(makeMarket(), null);
+    expect(result.rate).toBeNull();
+    expect(result.exponent).toBeNull();
   });
 
-  it("returns null when fd.r is null", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: null, e: 1, to: true } }))).toBeNull();
+  it("returns nulls when fd is null", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: null }));
+    expect(result.rate).toBeNull();
   });
 
-  it("returns null when fd.r is negative", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: -0.05, e: 1, to: true } }))).toBeNull();
+  it("returns nulls when fd.r is null", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: null, e: 1, to: true } }));
+    expect(result.rate).toBeNull();
   });
 
-  it("returns null when fd.r is not finite", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: Number.NaN, e: 1, to: true } }))).toBeNull();
+  it("returns nulls when fd.r is negative", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: -0.05, e: 1, to: true } }));
+    expect(result.rate).toBeNull();
   });
 
-  it("returns null when fd.e is not 1 (unsupported exponent)", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 2, to: true } }))).toBeNull();
+  it("returns nulls when fd.r is not finite", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: Number.NaN, e: 1, to: true } }));
+    expect(result.rate).toBeNull();
   });
 
-  it("returns null when fd.to is false (not taker-only)", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: false } }))).toBeNull();
+  it("rejects fd.e=3 (only 1 and 2 supported)", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 3, to: true } }));
+    expect(result.rate).toBeNull();
+  });
+
+  it("returns nulls when fd.to is false (not taker-only)", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: false } }));
+    expect(result.rate).toBeNull();
   });
 
   it("rejects fd.to=null (unspecified taker-only is unknown, fail closed)", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: null } }))).toBeNull();
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: 1, to: null } }));
+    expect(result.rate).toBeNull();
   });
 
   it("rejects fd.e=null (unspecified exponent is unknown, fail closed)", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: null, to: true } }))).toBeNull();
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0.05, e: null, to: true } }));
+    expect(result.rate).toBeNull();
   });
 
-  it("accepts fee-free markets (r=0)", () => {
-    expect(extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0, e: 1, to: true } }))).toBe(0);
+  it("accepts fee-free markets (r=0, e=1)", () => {
+    const result = extractFeeRate(makeMarket(), makeClobInfo({ fd: { r: 0, e: 1, to: true } }));
+    expect(result.rate).toBe(0);
+    expect(result.exponent).toBe(1);
   });
 });
