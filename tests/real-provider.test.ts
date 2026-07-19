@@ -492,4 +492,66 @@ describe("RealDataProvider gap gating (BUG: gap requires equivalence + fee)", ()
     expect(third.alert.consecutiveSamples).toBe(1);
     expect(third.alert.active).toBe(false);
   });
+
+  it("fires an alert after two consecutive qualifying polls (P1 regression)", async () => {
+    const bigGapOdds = makeOdds({ pct: ["80.000", "10.000", "10.000"] });
+    const bigGapBook = { ...makeBook(), asks: [{ price: "0.30", size: "80" }] };
+    const bigGapMarket = makeMarket({ outcomePrices: '["0.40", "0.60"]' });
+
+    fetchOddsForMatchMock.mockResolvedValue({
+      fixture: makeFixture(),
+      odds: [bigGapOdds],
+    });
+    fetchPolymarketDataMock.mockResolvedValue({
+      event: makeEvent(),
+      market: bigGapMarket,
+      book: bigGapBook,
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
+    });
+
+    const provider = await makeProvider();
+
+    const first = await provider.getSnapshot();
+    expect(first.alert.active).toBe(false);
+    expect(first.alert.phase).toBe("SAMPLING");
+    expect(first.alert.consecutiveSamples).toBe(1);
+
+    const second = await provider.getSnapshot();
+    expect(second.alert.active).toBe(true);
+    expect(second.alert.consecutiveSamples).toBe(2);
+    expect(second.alert.phase).toBe("COOLDOWN");
+  });
+
+  it("preserves SAMPLING state when alert is inactive but not suppressed (P1 regression)", async () => {
+    const bigGapOdds = makeOdds({ pct: ["80.000", "10.000", "10.000"] });
+    const bigGapBook = { ...makeBook(), asks: [{ price: "0.30", size: "80" }] };
+    const bigGapMarket = makeMarket({ outcomePrices: '["0.40", "0.60"]' });
+
+    fetchOddsForMatchMock.mockResolvedValue({
+      fixture: makeFixture(),
+      odds: [bigGapOdds],
+    });
+    fetchPolymarketDataMock.mockResolvedValue({
+      event: makeEvent(),
+      market: bigGapMarket,
+      book: bigGapBook,
+      yesTokenId: "27017352779469567119021515174282416893555366624071034758236558815968401338728",
+      clobInfo: makeClobInfo(),
+      identityValid: true,
+      identityFailures: [],
+    });
+
+    const provider = await makeProvider();
+    const first = await provider.getSnapshot();
+    expect(first.alert.phase).toBe("SAMPLING");
+    expect(first.alert.consecutiveSamples).toBe(1);
+    expect(first.alert.active).toBe(false);
+    expect(first.alert.suppressedReason).toBeNull();
+
+    expect((provider as unknown as { previousPhase: string }).previousPhase).toBe("SAMPLING");
+    expect((provider as unknown as { previousConsecutiveSamples: number }).previousConsecutiveSamples).toBe(1);
+  });
 });

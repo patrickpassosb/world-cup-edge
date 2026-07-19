@@ -240,7 +240,7 @@ export class RealDataProvider implements DataProvider {
       };
     }
 
-    if (alert.suppressedReason !== null || !alert.active) {
+    if (alert.suppressedReason !== null) {
       this.previousPhase = alert.phase === "COOLDOWN" ? alert.phase : "IDLE";
       this.previousConsecutiveSamples = 0;
     } else {
@@ -365,6 +365,8 @@ export class RealDataProvider implements DataProvider {
     txlineErr: string | null,
     now: number,
   ): Snapshot {
+    this.previousPhase = "IDLE";
+    this.previousConsecutiveSamples = 0;
     const poly = polyData ?? {
       event: null,
       market: null,
@@ -454,6 +456,8 @@ export class RealDataProvider implements DataProvider {
   }
 
   private buildErrorSnapshot(message: string, now: number): Snapshot {
+    this.previousPhase = "IDLE";
+    this.previousConsecutiveSamples = 0;
     const matchMeta = this.buildMatchMetadataForError();
     return {
       status: "error",
