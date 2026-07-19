@@ -233,9 +233,9 @@ function buildDrawMarketSlug(eventSlug: string): string {
 
 export interface PolymarketMatch {
   eventSlug: string;
-  homeMarketSlug: string;
-  drawMarketSlug: string;
-  awayMarketSlug: string;
+  homeMarketSlug: string | null;
+  drawMarketSlug: string | null;
+  awayMarketSlug: string | null;
 }
 
 export async function findPolymarketMatchForTeams(
@@ -262,13 +262,13 @@ export async function findPolymarketMatchForTeams(
     const drawMarket = markets.find((m) => m.slug === drawSlug);
     const awayMarket = markets.find((m) => m.slug === awaySlug);
 
-    if (!homeMarket || !drawMarket || !awayMarket) return null;
+    if (!homeMarket && !drawMarket && !awayMarket) return null;
 
     return {
       eventSlug: event.slug,
-      homeMarketSlug: homeMarket.slug,
-      drawMarketSlug: drawMarket.slug,
-      awayMarketSlug: awayMarket.slug,
+      homeMarketSlug: homeMarket?.slug ?? null,
+      drawMarketSlug: drawMarket?.slug ?? null,
+      awayMarketSlug: awayMarket?.slug ?? null,
     };
   } catch {
     return null;

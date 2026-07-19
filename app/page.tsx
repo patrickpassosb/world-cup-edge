@@ -209,10 +209,10 @@ function OutcomePickerSection({ selectedMatch, outcome, onSelect }: OutcomePicke
   if (!selectedMatch) return null;
   if (!selectedMatch.hasPolymarketMarket) return null;
 
-  const outcomes: { value: Outcome; label: string }[] = [
-    { value: "home", label: selectedMatch.homeTeam },
-    { value: "draw", label: "Draw" },
-    { value: "away", label: selectedMatch.awayTeam },
+  const outcomes: { value: Outcome; label: string; disabled: boolean }[] = [
+    { value: "home", label: selectedMatch.homeTeam, disabled: !selectedMatch.polymarketHomeMarketSlug },
+    { value: "draw", label: "Draw", disabled: !selectedMatch.polymarketDrawMarketSlug },
+    { value: "away", label: selectedMatch.awayTeam, disabled: !selectedMatch.polymarketAwayMarketSlug },
   ];
 
   return (
@@ -221,19 +221,22 @@ function OutcomePickerSection({ selectedMatch, outcome, onSelect }: OutcomePicke
         Outcome
       </span>
       <div className="flex gap-2">
-        {outcomes.map(({ value, label }) => {
+        {outcomes.map(({ value, label, disabled }) => {
           const isActive = outcome === value;
           return (
             <button
               key={value}
               type="button"
-              onClick={() => onSelect(value)}
+              onClick={() => !disabled && onSelect(value)}
               aria-label={`Select outcome: ${label}`}
               aria-pressed={isActive}
+              disabled={disabled}
               className={`border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.05em] transition-colors duration-100 ${
-                isActive
-                  ? "border-primary bg-primary text-on-primary"
-                  : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                disabled
+                  ? "border-outline-variant text-on-surface-variant opacity-30 cursor-not-allowed"
+                  : isActive
+                    ? "border-primary bg-primary text-on-primary"
+                    : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
               }`}
             >
               {label}
